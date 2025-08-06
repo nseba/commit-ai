@@ -9,6 +9,12 @@ GO_FILES=$(shell find . -name '*.go' -not -path './vendor/*')
 VERSION=$(shell git describe --tags --always --dirty)
 LDFLAGS=-ldflags "-s -w -X main.version=$(VERSION)"
 
+# Docker configuration
+DOCKER_USERNAME ?= nseba
+DOCKER_IMAGE_NAME = commit-ai
+DOCKER_TAG ?= latest
+DOCKER_FULL_NAME = $(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_TAG)
+
 # Default target
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -61,16 +67,36 @@ uninstall: ## Remove the binary from $GOPATH/bin
 
 # Docker targets
 docker-build: ## Build Docker image
-	docker build -t nseba/commit-ai:latest .
+	docker build -t $(DOCKER_FULL_NAME) .
 
 docker-run: ## Run Docker container
 	docker run --rm -it \
 		-v $(PWD):/workspace \
 		-v ~/.config/commit-ai:/home/appuser/.config/commit-ai \
-		nseba/commit-ai:latest
+		$(DOCKER_FULL_NAME)
 
 docker-push: docker-build ## Push Docker image to registry
-	docker push nseba/commit-ai:latest
+	@echo "Checking Docker login status..."
+	@docker info >/dev/null 2>&1 || (echo "Error: Docker is not running" && exit 1)
+	@if ! docker info 2>/dev/null | grep -q "Username:"; then \
+		echo "Error: Not logged into Docker Hub. Please run 'docker login' first."; \
+		exit 1; \
+	fi
+	@echo "Pushing $(DOCKER_FULL_NAME) to Docker Hub..."
+	docker push $(DOCKER_FULL_NAME)
+
+docker-status: ## Check Docker login status
+	@echo "Docker version: $(shell docker --version)"
+	@if docker info >/dev/null 2>&1; then \
+		echo "✓ Docker is running"; \
+		if docker info 2>/dev/null | grep -q "Username:"; then \
+			echo "✓ Logged into Docker Hub as: $$(docker info 2>/dev/null | grep 'Username:' | cut -d' ' -f2)"; \
+		else \
+			echo "✗ Not logged into Docker Hub. Run 'docker login' to authenticate."; \
+		fi; \
+	else \
+		echo "✗ Docker is not running"; \
+	fi
 
 # Example and demo targets
 setup-example: ## Set up example configuration
