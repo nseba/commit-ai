@@ -376,6 +376,118 @@ release-major: ## Create major release with auto-version (alias for release with
 		$(MAKE) release VERSION=v1.0.0; \
 	fi
 
+# Semantic Release targets
+semantic-release: ## Analyze commits and create semantic release automatically
+	@if [ ! -f "./scripts/semantic-release.sh" ]; then \
+		echo "Error: Semantic release script not found at ./scripts/semantic-release.sh"; \
+		exit 1; \
+	fi
+	@echo "🤖 Running semantic release analysis..."
+	@./scripts/semantic-release.sh
+
+semantic-release-dry: ## Show what semantic release would do (dry run)
+	@if [ ! -f "./scripts/semantic-release.sh" ]; then \
+		echo "Error: Semantic release script not found at ./scripts/semantic-release.sh"; \
+		exit 1; \
+	fi
+	@echo "🔍 Running semantic release dry run..."
+	@./scripts/semantic-release.sh --dry-run
+
+semantic-release-force: ## Force semantic release with specific version (usage: make semantic-release-force VERSION=v1.2.0)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is required. Usage: make semantic-release-force VERSION=v1.2.0"; \
+		exit 1; \
+	fi
+	@if [ ! -f "./scripts/semantic-release.sh" ]; then \
+		echo "Error: Semantic release script not found at ./scripts/semantic-release.sh"; \
+		exit 1; \
+	fi
+	@echo "🚀 Forcing semantic release with version $(VERSION)..."
+	@./scripts/semantic-release.sh --version $(VERSION) --skip-checks
+
+semantic-release-auto: ## Run semantic release without prompts
+	@if [ ! -f "./scripts/semantic-release.sh" ]; then \
+		echo "Error: Semantic release script not found at ./scripts/semantic-release.sh"; \
+		exit 1; \
+	fi
+	@echo "⚡ Running automatic semantic release..."
+	@./scripts/semantic-release.sh --skip-checks
+
+# Commit validation targets
+validate-commit: ## Validate the last commit message (usage: make validate-commit)
+	@if [ ! -f "./scripts/validate-commits.sh" ]; then \
+		echo "Error: Commit validator script not found at ./scripts/validate-commits.sh"; \
+		exit 1; \
+	fi
+	@echo "🔍 Validating last commit message..."
+	@./scripts/validate-commits.sh last
+
+validate-commits: ## Validate commits since last release
+	@if [ ! -f "./scripts/validate-commits.sh" ]; then \
+		echo "Error: Commit validator script not found at ./scripts/validate-commits.sh"; \
+		exit 1; \
+	fi
+	@LAST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10"); \
+	echo "🔍 Validating commits since $$LAST_TAG..."; \
+	./scripts/validate-commits.sh range $$LAST_TAG
+
+validate-all-commits: ## Validate all commits in the repository
+	@if [ ! -f "./scripts/validate-commits.sh" ]; then \
+		echo "Error: Commit validator script not found at ./scripts/validate-commits.sh"; \
+		exit 1; \
+	fi
+	@echo "🔍 Validating all commits..."
+	@./scripts/validate-commits.sh all
+
+validate-commit-msg: ## Validate a specific commit message (usage: make validate-commit-msg MSG="feat: add feature")
+	@if [ -z "$(MSG)" ]; then \
+		echo "Error: MSG is required. Usage: make validate-commit-msg MSG='feat: add feature'"; \
+		exit 1; \
+	fi
+	@if [ ! -f "./scripts/validate-commits.sh" ]; then \
+		echo "Error: Commit validator script not found at ./scripts/validate-commits.sh"; \
+		exit 1; \
+	fi
+	@echo "🔍 Validating commit message: $(MSG)"
+	@./scripts/validate-commits.sh validate "$(MSG)"
+
+suggest-commit: ## Suggest commit message format (usage: make suggest-commit TYPE=feat SCOPE=api DESC="add authentication")
+	@if [ -z "$(TYPE)" ] || [ -z "$(DESC)" ]; then \
+		echo "Error: TYPE and DESC are required. Usage: make suggest-commit TYPE=feat SCOPE=api DESC='add feature'"; \
+		echo "Example: make suggest-commit TYPE=fix DESC='resolve bug'"; \
+		exit 1; \
+	fi
+	@if [ ! -f "./scripts/validate-commits.sh" ]; then \
+		echo "Error: Commit validator script not found at ./scripts/validate-commits.sh"; \
+		exit 1; \
+	fi
+	@echo "💡 Generating commit message suggestions..."
+	@./scripts/validate-commits.sh suggest "$(TYPE)" "$(SCOPE)" "$(DESC)"
+
+# Git hooks targets
+install-hooks: ## Install git commit hooks for conventional commit validation
+	@if [ ! -f "./scripts/install-commit-hooks.sh" ]; then \
+		echo "Error: Hook installer script not found at ./scripts/install-commit-hooks.sh"; \
+		exit 1; \
+	fi
+	@echo "🪝 Installing git commit hooks..."
+	@./scripts/install-commit-hooks.sh install
+
+uninstall-hooks: ## Uninstall git commit hooks
+	@if [ ! -f "./scripts/install-commit-hooks.sh" ]; then \
+		echo "Error: Hook installer script not found at ./scripts/install-commit-hooks.sh"; \
+		exit 1; \
+	fi
+	@echo "🗑️ Uninstalling git commit hooks..."
+	@./scripts/install-commit-hooks.sh uninstall
+
+hooks-status: ## Show git hooks installation status
+	@if [ ! -f "./scripts/install-commit-hooks.sh" ]; then \
+		echo "Error: Hook installer script not found at ./scripts/install-commit-hooks.sh"; \
+		exit 1; \
+	fi
+	@./scripts/install-commit-hooks.sh status
+
 # Documentation
 docs: ## Generate documentation
 	@echo "Generating documentation..."
@@ -383,7 +495,7 @@ docs: ## Generate documentation
 	@echo "For detailed documentation, visit: https://github.com/nseba/commit-ai"
 
 # Git hooks
-install-hooks: ## Install git pre-commit hooks
+install-dev-hooks: ## Install git pre-commit hooks for development
 	@echo "#!/bin/sh" > .git/hooks/pre-commit
 	@echo "make dev-test" >> .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
