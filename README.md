@@ -244,6 +244,8 @@ docker run --rm -it \
   nseba/commit-ai:latest
 ```
 
+> **Note:** The Docker Hub description is automatically updated from this README via GitHub Actions whenever changes are pushed to the main branch. See [Docker Hub Automation docs](docs/docker-hub-automation.md) for details.
+
 ### Integration with Git Hooks
 
 Create a pre-commit hook to automatically generate commit messages:

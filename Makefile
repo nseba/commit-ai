@@ -98,6 +98,15 @@ docker-status: ## Check Docker login status
 		echo "✗ Docker is not running"; \
 	fi
 
+docker-update-description: ## Update Docker Hub repository description from README
+	@echo "Updating Docker Hub description for $(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME)..."
+	@if [ -z "$(DOCKER_USERNAME)" ] || [ -z "$(DOCKER_PASSWORD)" ]; then \
+		echo "Error: DOCKER_USERNAME and DOCKER_PASSWORD environment variables must be set"; \
+		echo "Set them with: export DOCKER_USERNAME=your-username DOCKER_PASSWORD=your-token"; \
+		exit 1; \
+	fi
+	./scripts/update-docker-description.sh
+
 # Example and demo targets
 setup-example: ## Set up example configuration
 	mkdir -p ~/.config/commit-ai
