@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/BurntSushi/toml"
 )
@@ -21,6 +22,7 @@ type Config struct {
 	APIToken       string `toml:"CAI_API_TOKEN"`
 	Language       string `toml:"CAI_LANGUAGE"`
 	PromptTemplate string `toml:"CAI_PROMPT_TEMPLATE"`
+	TimeoutSeconds int    `toml:"CAI_TIMEOUT_SECONDS"`
 }
 
 // DefaultConfig returns the default configuration
@@ -32,6 +34,7 @@ func DefaultConfig() *Config {
 		APIToken:       "",
 		Language:       "english",
 		PromptTemplate: "default.txt",
+		TimeoutSeconds: 300, // 5 minutes default
 	}
 }
 
@@ -100,6 +103,11 @@ func (c *Config) loadFromEnv() {
 	}
 	if val := os.Getenv("CAI_PROMPT_TEMPLATE"); val != "" {
 		c.PromptTemplate = val
+	}
+	if val := os.Getenv("CAI_TIMEOUT_SECONDS"); val != "" {
+		if timeout, err := strconv.Atoi(val); err == nil && timeout > 0 {
+			c.TimeoutSeconds = timeout
+		}
 	}
 }
 

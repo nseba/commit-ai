@@ -43,7 +43,7 @@ func New(cfg *config.Config, configFile string) (*Generator, error) {
 
 	return &Generator{
 		config:   cfg,
-		client:   &http.Client{Timeout: 180 * time.Second},
+		client:   &http.Client{Timeout: time.Duration(cfg.TimeoutSeconds) * time.Second},
 		template: tmpl,
 	}, nil
 }

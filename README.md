@@ -79,6 +79,7 @@ Commit-AI looks for configuration in `~/.config/commit-ai/config.toml`. If it do
 | `CAI_API_TOKEN` | `CAI_API_TOKEN` | API token (required for OpenAI) | `""` |
 | `CAI_LANGUAGE` | `CAI_LANGUAGE` | Language for commit messages | `english` |
 | `CAI_PROMPT_TEMPLATE` | `CAI_PROMPT_TEMPLATE` | Prompt template file name | `default.txt` |
+| `CAI_TIMEOUT_SECONDS` | `CAI_TIMEOUT_SECONDS` | Timeout for AI requests (seconds) | `300` |
 
 ### Example Configuration
 
@@ -91,6 +92,7 @@ CAI_PROVIDER = "ollama"
 CAI_API_TOKEN = ""
 CAI_LANGUAGE = "english"
 CAI_PROMPT_TEMPLATE = "default.txt"
+CAI_TIMEOUT_SECONDS = 300
 ```
 
 ### OpenAI Configuration
@@ -104,6 +106,7 @@ CAI_PROVIDER = "openai"
 CAI_API_TOKEN = "your-openai-api-key"
 CAI_LANGUAGE = "english"
 CAI_PROMPT_TEMPLATE = "default.txt"
+CAI_TIMEOUT_SECONDS = 300
 ```
 
 ## Prompt Templates
@@ -414,6 +417,11 @@ commit-ai
 - For Ollama: Ensure Ollama is running (`ollama serve`)
 - For OpenAI: Check your API token and internet connection
 - Verify the API URL in your configuration
+
+#### "Timeout errors with large diffs"
+- Increase `CAI_TIMEOUT_SECONDS` in your config (default: 300 seconds)
+- For very large initial commits, consider: `export CAI_TIMEOUT_SECONDS=600`
+- Break large commits into smaller, focused commits when possible
 
 #### "Template not found"
 - Check if the template file exists in `~/.config/commit-ai/`

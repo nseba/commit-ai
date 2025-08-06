@@ -26,3 +26,8 @@ CAI_LANGUAGE = "english"
 # Name of the prompt template file (relative to config directory)
 # The template file should be placed in ~/.config/commit-ai/
 CAI_PROMPT_TEMPLATE = "default.txt"
+
+# Timeout in seconds for AI API requests
+# Increase this value if you experience timeout issues with large diffs
+# Default: 300 seconds (5 minutes)
+CAI_TIMEOUT_SECONDS = 300

@@ -177,6 +177,7 @@ make build
 | `CAI_API_TOKEN` | `CAI_API_TOKEN` | API authentication token | `""` |
 | `CAI_LANGUAGE` | `CAI_LANGUAGE` | Output language | `english` |
 | `CAI_PROMPT_TEMPLATE` | `CAI_PROMPT_TEMPLATE` | Template filename | `default.txt` |
+| `CAI_TIMEOUT_SECONDS` | `CAI_TIMEOUT_SECONDS` | Timeout for AI requests (seconds) | `300` |
 
 ## 🐳 Docker Architecture
 
