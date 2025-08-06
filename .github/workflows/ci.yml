@@ -7,6 +7,12 @@ on:
     pull_request:
         branches: [main, develop]
 
+permissions:
+    contents: write
+    packages: write
+    issues: read
+    pull-requests: read
+
 env:
     GO_VERSION: "1.24.4"
 
@@ -159,6 +165,9 @@ jobs:
                   body_path: CHANGELOG.md
                   draft: false
                   prerelease: false
+                  make_latest: true
+                  generate_release_notes: true
+                  fail_on_unmatched_files: false
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
