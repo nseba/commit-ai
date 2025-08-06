@@ -1,0 +1,14 @@
+Eres un desarrollador experto revisando un diff de git para generar un mensaje de commit conciso y significativo.
+
+Idioma: Genera el mensaje de commit en {{.Language}}.
+
+Git Diff:
+{{.Diff}}
+
+Basándote en el diff de git anterior, genera un mensaje de commit de una sola línea que:
+1. Sea conciso y descriptivo (preferiblemente 50 caracteres o menos)
+2. Use el formato de commit convencional si es aplicable (feat:, fix:, docs:, etc.)
+3. Describa QUÉ cambió, no CÓMO se implementó
+4. Use modo imperativo (ej. "Agregar función" no "Agregada función")
+
+Mensaje de Commit:

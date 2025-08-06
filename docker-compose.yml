@@ -1,0 +1,148 @@
+version: '3.8'
+
+services:
+  # Ollama service for local AI processing
+  ollama:
+    image: ollama/ollama:latest
+    container_name: commit-ai-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - commit-ai-network
+
+  # Commit-AI development container
+  commit-ai-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: commit-ai-dev
+    volumes:
+      # Mount source code for development
+      - .:/workspace
+      # Mount git config
+      - ~/.gitconfig:/home/appuser/.gitconfig:ro
+      # Mount SSH keys for git operations
+      - ~/.ssh:/home/appuser/.ssh:ro
+      # Mount configuration
+      - commit_ai_config:/home/appuser/.config/commit-ai
+      # Mount Go module cache
+      - go_mod_cache:/go/pkg/mod
+      # Mount Go build cache
+      - go_build_cache:/home/appuser/.cache/go-build
+    working_dir: /workspace
+    environment:
+      - CAI_API_URL=http://ollama:11434
+      - CAI_PROVIDER=ollama
+      - CAI_MODEL=llama2
+      - CAI_LANGUAGE=english
+      - GOPROXY=https://proxy.golang.org,direct
+      - GOSUMDB=sum.golang.org
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - commit-ai-network
+    command: tail -f /dev/null  # Keep container running for development
+
+  # Commit-AI production container
+  commit-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: commit-ai-prod
+    volumes:
+      # Mount git repository (bind mount for current directory)
+      - .:/workspace
+      # Mount configuration
+      - commit_ai_config:/home/appuser/.config/commit-ai
+      # Mount git config
+      - ~/.gitconfig:/home/appuser/.gitconfig:ro
+    working_dir: /workspace
+    environment:
+      - CAI_API_URL=http://ollama:11434
+      - CAI_PROVIDER=ollama
+      - CAI_MODEL=llama2
+      - CAI_LANGUAGE=english
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - commit-ai-network
+    profiles:
+      - production
+
+  # OpenAI variant for testing with external API
+  commit-ai-openai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: commit-ai-openai
+    volumes:
+      - .:/workspace
+      - commit_ai_config:/home/appuser/.config/commit-ai
+      - ~/.gitconfig:/home/appuser/.gitconfig:ro
+    working_dir: /workspace
+    environment:
+      - CAI_API_URL=https://api.openai.com
+      - CAI_PROVIDER=openai
+      - CAI_MODEL=gpt-3.5-turbo
+      - CAI_LANGUAGE=english
+      - CAI_API_TOKEN=${OPENAI_API_TOKEN}
+    networks:
+      - commit-ai-network
+    profiles:
+      - openai
+
+  # Model management service
+  model-setup:
+    image: ollama/ollama:latest
+    container_name: commit-ai-model-setup
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - commit-ai-network
+    profiles:
+      - setup
+    command: >
+      sh -c "
+        echo 'Waiting for Ollama to be ready...' &&
+        sleep 10 &&
+        echo 'Pulling models...' &&
+        ollama pull llama2 &&
+        ollama pull codellama &&
+        ollama pull mistral &&
+        echo 'Models pulled successfully!'
+      "
+
+volumes:
+  ollama_data:
+    driver: local
+  commit_ai_config:
+    driver: local
+  go_mod_cache:
+    driver: local
+  go_build_cache:
+    driver: local
+
+networks:
+  commit-ai-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

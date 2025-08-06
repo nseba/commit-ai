@@ -1,0 +1,60 @@
+# Development Dockerfile for Commit-AI
+FROM golang:1.21-alpine AS base
+
+# Install development dependencies
+RUN apk add --no-cache \
+    git \
+    curl \
+    make \
+    bash \
+    openssh-client \
+    ca-certificates \
+    tzdata
+
+# Install development tools
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && \
+    go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest && \
+    go install golang.org/x/tools/cmd/goimports@latest && \
+    go install mvdan.cc/gofumpt@latest
+
+# Create non-root user for development
+RUN addgroup -g 1001 appgroup && \
+    adduser -u 1001 -G appgroup -s /bin/bash -D appuser
+
+# Set up workspace
+WORKDIR /workspace
+
+# Create necessary directories
+RUN mkdir -p /home/appuser/.config/commit-ai && \
+    mkdir -p /home/appuser/.cache/go-build && \
+    chown -R appuser:appgroup /home/appuser
+
+# Switch to non-root user
+USER appuser
+
+# Set Go environment for development
+ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOSUMDB=sum.golang.org
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+
+# Create development aliases and functions
+RUN echo 'alias ll="ls -la"' >> /home/appuser/.bashrc && \
+    echo 'alias la="ls -la"' >> /home/appuser/.bashrc && \
+    echo 'alias grep="grep --color=auto"' >> /home/appuser/.bashrc && \
+    echo 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> /home/appuser/.bashrc
+
+# Development helper functions
+RUN echo '#!/bin/bash' > /home/appuser/.local/bin/dev-test && \
+    echo 'cd /workspace && make dev-test' >> /home/appuser/.local/bin/dev-test && \
+    chmod +x /home/appuser/.local/bin/dev-test
+
+RUN echo '#!/bin/bash' > /home/appuser/.local/bin/dev-build && \
+    echo 'cd /workspace && make build' >> /home/appuser/.local/bin/dev-build && \
+    chmod +x /home/appuser/.local/bin/dev-build
+
+# Expose common development ports
+EXPOSE 8080 9090
+
+# Default command for development
+CMD ["/bin/bash"]

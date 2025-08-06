@@ -1,0 +1,145 @@
+# Commit-AI Project .caiignore
+# This file excludes certain files from being analyzed for commit message generation
+
+# Build artifacts and binaries
+dist/
+build/
+target/
+out/
+bin/
+commit-ai
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go build artifacts
+*.test
+*.prof
+cpu.prof
+mem.prof
+
+# Test coverage reports
+coverage.out
+coverage.html
+*.coverage
+
+# Dependency directories
+vendor/
+node_modules/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.kate-swp
+.*.sw?
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+.Trashes
+.Spotlight-V100
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+*.log
+logs/
+
+# Git files
+.git/
+.gitignore
+
+# Configuration files that might contain sensitive data
+config.toml
+.env
+.env.*
+*.key
+*.pem
+secrets/
+
+# Documentation that doesn't affect functionality
+*.md
+docs/
+documentation/
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+SECURITY.md
+
+# CI/CD files (usually don't need commit messages for small changes)
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+Jenkinsfile
+
+# Package manager lock files (auto-generated)
+go.sum
+package-lock.json
+yarn.lock
+Pipfile.lock
+poetry.lock
+
+# Docker files for development
+docker-compose.yml
+Dockerfile.dev
+.dockerignore
+
+# Scripts that are utilities
+scripts/
+install.sh
+setup.sh
+
+# Example and template files
+*.example
+*.template
+templates/
+examples/
+
+# Large data files
+*.csv
+*.json
+*.xml
+data/
+datasets/
+*.db
+*.sqlite
+*.sqlite3
+
+# Media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.mp4
+*.mov
+*.avi
+
+# Cache directories
+.cache/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.tox/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Archive files
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z

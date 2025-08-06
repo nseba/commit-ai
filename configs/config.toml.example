@@ -1,0 +1,28 @@
+# Commit-AI Configuration File
+# Copy this file to ~/.config/commit-ai/config.toml and customize as needed
+
+# API URL for the AI provider
+# For Ollama (default): http://localhost:11434
+# For OpenAI: https://api.openai.com
+CAI_API_URL = "http://localhost:11434"
+
+# Model name to use for generating commit messages
+# For Ollama: llama2, codellama, mistral, etc.
+# For OpenAI: gpt-3.5-turbo, gpt-4, etc.
+CAI_MODEL = "llama2"
+
+# AI provider to use
+# Supported values: ollama, openai
+CAI_PROVIDER = "ollama"
+
+# API token for external providers (required for OpenAI)
+# Leave empty for local providers like Ollama
+CAI_API_TOKEN = ""
+
+# Language for the generated commit messages
+# Examples: english, spanish, french, german, etc.
+CAI_LANGUAGE = "english"
+
+# Name of the prompt template file (relative to config directory)
+# The template file should be placed in ~/.config/commit-ai/
+CAI_PROMPT_TEMPLATE = "default.txt"

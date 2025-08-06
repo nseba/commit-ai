@@ -1,0 +1,188 @@
+# golangci-lint configuration file
+# See: https://golangci-lint.run/usage/configuration/
+
+run:
+    timeout: 5m
+    issues-exit-code: 1
+    tests: true
+    modules-download-mode: readonly
+
+output:
+    formats:
+        - format: colored-line-number
+    print-issued-lines: true
+    print-linter-name: true
+    sort-results: true
+
+linters-settings:
+    errcheck:
+        check-type-assertions: true
+        check-blank: false
+
+    exhaustive:
+        default-signifies-exhaustive: false
+
+    funlen:
+        lines: 150
+        statements: 80
+
+    gocyclo:
+        min-complexity: 20
+
+    godot:
+        scope: declarations
+        exclude:
+            - "^fixme:"
+            - "^todo:"
+
+    gofmt:
+        simplify: true
+
+    gofumpt:
+        extra-rules: true
+
+    goimports:
+        local-prefixes: github.com/nseba/commit-ai
+
+    govet:
+        shadow:
+            strict: false
+
+    lll:
+        line-length: 140
+
+    misspell:
+        locale: US
+
+    nolintlint:
+        allow-unused: false
+        require-explanation: false
+        require-specific: true
+
+    revive:
+        min-confidence: 0.8
+        rules:
+            - name: atomic
+            - name: line-length-limit
+              severity: error
+              arguments: [140]
+
+    staticcheck:
+        checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022"]
+
+    stylecheck:
+        checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022"]
+
+    depguard:
+        rules:
+            main:
+                deny:
+                    - pkg: "io/ioutil"
+                      desc: "use io or os package instead"
+
+    gosec:
+        excludes:
+            - G304 # File path provided as taint input
+            - G301 # Directory permissions
+            - G306 # File permissions
+        config:
+            G301: "0750"
+            G306: "0644"
+
+    unused:
+        go: "1.21"
+
+    unparam:
+        check-exported: false
+
+linters:
+    disable-all: true
+    enable:
+        - bodyclose
+        - depguard
+        - dogsled
+        - dupl
+        - errcheck
+        - exhaustive
+        - funlen
+        - goconst
+        - gocritic
+        - gocyclo
+        - gofmt
+        - gofumpt
+        - goimports
+        - goprintffuncname
+        - gosec
+        - gosimple
+        - govet
+        - ineffassign
+        - lll
+        - misspell
+        - nakedret
+        - noctx
+        - nolintlint
+        - rowserrcheck
+        - staticcheck
+        - stylecheck
+        - typecheck
+        - unconvert
+        - unparam
+        - unused
+        - whitespace
+
+issues:
+    exclude-dirs:
+        - vendor
+    exclude-files:
+        - ".*\\.pb\\.go$"
+    uniq-by-line: true
+    max-issues-per-linter: 0
+    max-same-issues: 0
+    new: false
+    fix: false
+    exclude-use-default: false
+    exclude-rules:
+        # Exclude some linters from running on tests files
+        - path: _test\.go
+          linters:
+              - funlen
+              - goconst
+              - lll
+              - gocyclo
+              - errcheck
+              - dupl
+              - gosec
+              - unparam
+
+        # Exclude init function check for CLI setup
+        - path: internal/cli/root\.go
+          text: "don't use `init` function"
+          linters:
+              - gochecknoinits
+
+        # Allow shadowing in some contexts
+        - text: "shadow:"
+          linters:
+              - govet
+          path: internal/
+
+        # Allow HTTP without context in specific cases
+        - text: "must not be called"
+          linters:
+              - noctx
+          path: internal/generator/
+
+        # Allow file operations for config and templates
+        - text: "Potential file inclusion via variable"
+          linters:
+              - gosec
+          path: internal/
+
+        # Allow unchecked file.Close in defer statements
+        - text: "Error return value of.*Close.*is not checked"
+          linters:
+              - errcheck
+
+severity:
+    default-severity: error
+    case-sensitive: false

@@ -1,0 +1,116 @@
+# Example .caiignore file
+# This file uses the same syntax as .gitignore to exclude files from commit message generation
+
+# Log files
+*.log
+logs/
+debug.log
+error.log
+
+# Build artifacts
+dist/
+build/
+target/
+out/
+bin/
+
+# Dependency directories
+node_modules/
+vendor/
+.vendor/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+
+# Generated files
+*.generated.go
+*.pb.go
+*_pb2.py
+*.generated.ts
+
+# Documentation (if you don't want docs changes in commit messages)
+# *.md
+# docs/
+# documentation/
+
+# Test files (if you want to focus on implementation changes)
+# *_test.go
+# test/
+# tests/
+# __tests__/
+# spec/
+
+# Configuration files that might contain sensitive data
+# config.toml
+# .env
+# .env.local
+# secrets.yml
+
+# Package manager files
+package-lock.json
+yarn.lock
+go.sum
+Pipfile.lock
+
+# Coverage reports
+coverage.out
+coverage.html
+*.coverage
+.nyc_output/
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Large data files
+*.csv
+*.json
+*.xml
+data/
+datasets/
+
+# Media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.mp4
+*.mov
+*.avi
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+.Trashes

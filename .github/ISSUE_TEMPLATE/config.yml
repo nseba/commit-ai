@@ -1,0 +1,66 @@
+---
+name: Configuration Help
+about: Get help with configuration or setup issues
+title: '[CONFIG] '
+labels: ['help wanted', 'configuration']
+assignees: ''
+
+---
+
+**What type of help do you need?**
+- [ ] Initial setup and configuration
+- [ ] AI provider configuration (Ollama/OpenAI)
+- [ ] Prompt template customization
+- [ ] Ignore patterns (.caiignore)
+- [ ] Integration with git workflows
+- [ ] Docker setup
+- [ ] Other: _____
+
+**Current configuration**
+Please provide your current configuration (remove any sensitive information like API tokens):
+```toml
+# Your ~/.config/commit-ai/config.toml content here
+```
+
+**Environment details**
+- OS: [e.g. macOS 14.0, Ubuntu 22.04, Windows 11]
+- commit-ai version: [e.g. v1.0.0]
+- Installation method: [e.g. go install, homebrew, docker, manual]
+- Shell: [e.g. bash, zsh, fish]
+
+**What are you trying to achieve?**
+Describe what you want to accomplish with commit-ai.
+
+**What have you tried so far?**
+List the steps you've already taken or configurations you've attempted.
+
+**Error messages or unexpected behavior**
+If you're getting errors or unexpected results, please include them here:
+```
+Error messages or output here
+```
+
+**AI Provider Setup**
+If this is related to AI provider configuration:
+- [ ] Using Ollama locally
+- [ ] Using OpenAI API
+- [ ] Using another provider: _____
+- Model you want to use: [e.g. llama2, gpt-3.5-turbo]
+- Is the AI service running/accessible? [yes/no/unknown]
+
+**Git Repository Context**
+- Repository type: [e.g. personal project, work project, open source]
+- Typical file types: [e.g. Go, Python, JavaScript, mixed]
+- Team size: [e.g. solo, small team, large team]
+
+**Desired outcome**
+What would a successful configuration look like for your use case?
+
+**Additional context**
+Add any other context about your setup, workflow, or requirements.
+
+**Checklist**
+- [ ] I have read the README and documentation
+- [ ] I have searched existing issues for similar configuration questions
+- [ ] I have provided my configuration (without sensitive data)
+- [ ] I have described what I'm trying to achieve
