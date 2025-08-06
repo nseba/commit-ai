@@ -45,8 +45,7 @@ linters-settings:
         local-prefixes: github.com/nseba/commit-ai
 
     govet:
-        shadow:
-            strict: false
+        check-shadowing: false
 
     lll:
         line-length: 140
@@ -60,7 +59,7 @@ linters-settings:
         require-specific: true
 
     revive:
-        min-confidence: 0.8
+        confidence: 0.8
         rules:
             - name: atomic
             - name: line-length-limit
@@ -85,12 +84,9 @@ linters-settings:
             - G304 # File path provided as taint input
             - G301 # Directory permissions
             - G306 # File permissions
-        config:
-            G301: "0750"
-            G306: "0644"
 
     unused:
-        go: "1.21"
+        exported-is-used: false
 
     unparam:
         check-exported: false
