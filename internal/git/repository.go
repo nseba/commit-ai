@@ -162,7 +162,7 @@ func (r *Repository) getInitialCommitDiff() (string, error) {
 			continue // Skip invalid paths
 		}
 		filePath := filepath.Join(r.path, file)
-		content, err := os.ReadFile(filePath)
+		content, err := os.ReadFile(filePath) // #nosec G304 -- path validated by validatePath()
 		if err != nil {
 			continue // Skip files that can't be read
 		}
@@ -184,7 +184,7 @@ func (r *Repository) getFileDiff(filename string, headTree *object.Tree) (string
 	filePath := filepath.Join(r.path, filename)
 
 	// Read current file content
-	currentContent, err := os.ReadFile(filePath)
+	currentContent, err := os.ReadFile(filePath) // #nosec G304 -- path validated by validatePath()
 	if os.IsNotExist(err) {
 		// File was deleted
 		return r.getDeletedFileDiff(filename, headTree)

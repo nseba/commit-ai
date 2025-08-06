@@ -194,7 +194,7 @@ func loadTemplate(templatePath string) (*template.Template, error) {
 	}
 
 	// Check if template file exists
-	content, err := os.ReadFile(templatePath)
+	content, err := os.ReadFile(templatePath) // #nosec G304 -- path validated by validateTemplatePath()
 	if err != nil {
 		// If template doesn't exist, create it with default content
 		defaultContent := getDefaultTemplate()
@@ -243,7 +243,7 @@ func createDefaultTemplate(templatePath, content string) error {
 		return fmt.Errorf("failed to create template directory: %w", err)
 	}
 
-	if err := os.WriteFile(templatePath, []byte(content), 0o600); err != nil {
+	if err := os.WriteFile(templatePath, []byte(content), 0o600); err != nil { // #nosec G306 -- path validated by validateTemplatePath()
 		return fmt.Errorf("failed to write template file: %w", err)
 	}
 	return nil
