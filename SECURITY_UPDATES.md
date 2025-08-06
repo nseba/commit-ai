@@ -5,7 +5,7 @@ This document tracks security vulnerabilities and their resolutions in the commi
 ## Recent Security Fixes (December 2024)
 
 ### Summary
-Updated multiple dependencies to address critical security vulnerabilities including argument injection, authorization bypass, denial of service, and cryptographic vulnerabilities.
+Updated multiple dependencies to address critical security vulnerabilities including argument injection, authorization bypass, denial of service, and cryptographic vulnerabilities. Also updated Docker configurations to support the new Go version requirements.
 
 ### Vulnerabilities Addressed
 
@@ -66,6 +66,15 @@ Updated multiple dependencies to address critical security vulnerabilities inclu
 | `github.com/cloudflare/circl` | v1.3.3 | v1.6.1 | Medium - Timing attack fix |
 | `golang.org/x/net` | v0.19.0 | v0.42.0 | Low-Medium - HTML tokenizer fix |
 | `github.com/stretchr/testify` | v1.8.4 | v1.10.0 | Maintenance update |
+
+## Infrastructure Updates
+
+### Docker Configuration
+- **Updated Dockerfile**: Go 1.21-alpine → Go 1.24-alpine
+- **Updated Dockerfile.dev**: Go 1.21-alpine → Go 1.24-alpine  
+- **Fixed gosec installation**: Updated to correct repository path `github.com/securego/gosec`
+- **CI/CD Pipeline**: Updated to use Go 1.24.4 in GitHub Actions
+- **Multi-platform builds**: Verified working with linux/amd64 and linux/arm64
 
 ## Verification Steps
 
@@ -155,5 +164,8 @@ For security vulnerabilities or concerns:
 - Fixed SSH authorization bypass (golang.org/x/crypto v0.16.0 → v0.40.0)
 - Fixed Kyber timing attack (circl v1.3.3 → v1.6.1)
 - Fixed HTML tokenizer issue (golang.org/x/net v0.19.0 → v0.42.0)
-- Updated Go version requirement to 1.23.0
+- Updated Go version requirement to 1.24.4
+- Updated Docker configurations for Go 1.24 compatibility
+- Fixed CI/CD pipeline Docker builds
 - Added comprehensive security documentation
+- Enhanced Makefile with automated security scanning
