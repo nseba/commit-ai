@@ -70,7 +70,7 @@ and allows customization through configuration files and prompt templates.`,
 		}
 
 		if filteredDiff == "" {
-			fmt.Println("No changes after applying ignore patterns")
+			fmt.Println("chore: No changes after applying ignore patterns")
 			return nil
 		}
 
