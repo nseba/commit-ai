@@ -70,7 +70,8 @@ func (c *Config) Save(configFile string) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	file, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600) // #nosec G304 -- configFile path is controlled by application
+	// #nosec G304 -- configFile path is controlled by application
+	file, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to create config file: %w", err)
 	}

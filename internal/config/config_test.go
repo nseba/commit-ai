@@ -72,10 +72,10 @@ func TestConfig_LoadFromEnv(t *testing.T) {
 
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		cfg     *Config
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name:    "valid ollama config",
