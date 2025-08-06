@@ -66,20 +66,20 @@ config.toml
 secrets/
 
 # Documentation that doesn't affect functionality
-*.md
-docs/
-documentation/
-CHANGELOG.md
-CONTRIBUTING.md
-LICENSE
-SECURITY.md
+#*.md
+#docs/
+#documentation/
+#CHANGELOG.md
+#CONTRIBUTING.md
+#LICENSE
+#SECURITY.md
 
 # CI/CD files (usually don't need commit messages for small changes)
-.github/
-.gitlab-ci.yml
-.travis.yml
-.circleci/
-Jenkinsfile
+#.github/
+#.gitlab-ci.yml
+#.travis.yml
+#.circleci/
+#Jenkinsfile
 
 # Package manager lock files (auto-generated)
 go.sum
@@ -89,20 +89,20 @@ Pipfile.lock
 poetry.lock
 
 # Docker files for development
-docker-compose.yml
+#docker-compose.yml
 Dockerfile.dev
 .dockerignore
 
 # Scripts that are utilities
-scripts/
-install.sh
-setup.sh
+#scripts/
+#install.sh
+#setup.sh
 
 # Example and template files
-*.example
-*.template
-templates/
-examples/
+#*.example
+#*.template
+#templates/
+#examples/
 
 # Large data files
 *.csv
