@@ -383,7 +383,7 @@ semantic_release() {
 
     # Analyze commits since last release
     local bump_type
-    bump_type=$(analyze_commits "$current_version")
+    bump_type=$(analyze_commits "$current_version" | tail -n 1)
 
     if [ "$bump_type" = "none" ]; then
         print_warning "No significant changes detected. No release needed."

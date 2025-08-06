@@ -1,13 +1,4 @@
-# Release [0;31m✗ Invalid bump type: [0;34mℹ Analyzing commits from v1.0.0 to HEAD...[0m
-  📝 feat: add semantic release automation with conventional commits
-  📝 `fix(cli): remove obsolete ignore patterns`
-  📝 No changes after applying ignore patterns
-  📝 feat: add comprehensive release automation to Makefile
-  📝 fix: add GitHub Actions permissions for automated releases
-
-[0;34mℹ ✨ New features detected[0m
-[0;34mℹ 🐛 Bug fixes detected[0m
-minor[0m
+# Release v1.1.0
 
 **Release Date**: 2025-08-06
 
@@ -25,6 +16,7 @@ minor[0m
 
 ## 📝 Other Changes
 
+* No changes after applying ignore patterns ([2d82f61](https://github.com/nseba/commit-ai/commit/2d82f61))
 * `fix(cli): remove obsolete ignore patterns` ([aea4944](https://github.com/nseba/commit-ai/commit/aea4944))
 * No changes after applying ignore patterns ([2aa1802](https://github.com/nseba/commit-ai/commit/2aa1802))
 
@@ -32,43 +24,16 @@ minor[0m
 ## 📦 Installation
 
 ### Download Binary
-Download the appropriate binary for your platform from the [release assets](https://github.com/nseba/commit-ai/releases/tag/[0;31m✗ Invalid bump type: [0;34mℹ Analyzing commits from v1.0.0 to HEAD...[0m
-  📝 feat: add semantic release automation with conventional commits
-  📝 `fix(cli): remove obsolete ignore patterns`
-  📝 No changes after applying ignore patterns
-  📝 feat: add comprehensive release automation to Makefile
-  📝 fix: add GitHub Actions permissions for automated releases
-
-[0;34mℹ ✨ New features detected[0m
-[0;34mℹ 🐛 Bug fixes detected[0m
-minor[0m).
+Download the appropriate binary for your platform from the [release assets](https://github.com/nseba/commit-ai/releases/tag/v1.1.0).
 
 ### Using Go
 ```bash
-go install github.com/nseba/commit-ai/cmd@[0;31m✗ Invalid bump type: [0;34mℹ Analyzing commits from v1.0.0 to HEAD...[0m
-  📝 feat: add semantic release automation with conventional commits
-  📝 `fix(cli): remove obsolete ignore patterns`
-  📝 No changes after applying ignore patterns
-  📝 feat: add comprehensive release automation to Makefile
-  📝 fix: add GitHub Actions permissions for automated releases
-
-[0;34mℹ ✨ New features detected[0m
-[0;34mℹ 🐛 Bug fixes detected[0m
-minor[0m
+go install github.com/nseba/commit-ai/cmd@v1.1.0
 ```
 
 ### Using Docker
 ```bash
-docker pull nseba/commit-ai:[0;31m✗ Invalid bump type: [0;34mℹ Analyzing commits from v1.0.0 to HEAD...[0m
-  📝 feat: add semantic release automation with conventional commits
-  📝 `fix(cli): remove obsolete ignore patterns`
-  📝 No changes after applying ignore patterns
-  📝 feat: add comprehensive release automation to Makefile
-  📝 fix: add GitHub Actions permissions for automated releases
-
-[0;34mℹ ✨ New features detected[0m
-[0;34mℹ 🐛 Bug fixes detected[0m
-minor[0m
+docker pull nseba/commit-ai:v1.1.0
 ```
 
 ### Using Homebrew (if available)
@@ -79,16 +44,7 @@ brew install commit-ai
 
 ## 🔗 Links
 
-* **Full Changelog**: https://github.com/nseba/commit-ai/compare/v1.0.0...[0;31m✗ Invalid bump type: [0;34mℹ Analyzing commits from v1.0.0 to HEAD...[0m
-  📝 feat: add semantic release automation with conventional commits
-  📝 `fix(cli): remove obsolete ignore patterns`
-  📝 No changes after applying ignore patterns
-  📝 feat: add comprehensive release automation to Makefile
-  📝 fix: add GitHub Actions permissions for automated releases
-
-[0;34mℹ ✨ New features detected[0m
-[0;34mℹ 🐛 Bug fixes detected[0m
-minor[0m
+* **Full Changelog**: https://github.com/nseba/commit-ai/compare/v1.0.0...v1.1.0
 * **Docker Image**: https://hub.docker.com/r/nseba/commit-ai
 * **Documentation**: https://github.com/nseba/commit-ai#readme
 
