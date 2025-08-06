@@ -159,9 +159,26 @@ ci: deps dev-test build ## Run CI pipeline locally
 security-scan: ## Run security scan with gosec
 	@if ! command -v gosec >/dev/null 2>&1; then \
 		echo "Installing gosec..."; \
-		go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest; \
+		go install github.com/securego/gosec/v2/cmd/gosec@latest; \
 	fi
 	gosec ./...
+
+security-deps: ## Check for vulnerable dependencies
+	@echo "Checking for vulnerable dependencies..."
+	@if ! command -v govulncheck >/dev/null 2>&1; then \
+		echo "Installing govulncheck..."; \
+		go install golang.org/x/vuln/cmd/govulncheck@latest; \
+	fi
+	govulncheck ./...
+
+security-all: security-scan security-deps ## Run all security checks
+	@echo "All security checks completed"
+
+security-update: ## Update dependencies for security fixes
+	@echo "Updating dependencies..."
+	go get -u all
+	go mod tidy
+	@echo "Dependencies updated. Please test and commit changes."
 
 # Documentation
 docs: ## Generate documentation

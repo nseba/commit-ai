@@ -9,6 +9,10 @@ We actively support and provide security updates for the following versions of C
 | 1.0.x   | :white_check_mark: |
 | < 1.0   | :x:                |
 
+## Recent Security Updates
+
+For detailed information about recent security fixes and vulnerability resolutions, see [SECURITY_UPDATES.md](SECURITY_UPDATES.md).
+
 ## Reporting a Vulnerability
 
 The Commit-AI team takes security seriously. We appreciate your efforts to responsibly disclose your findings and will make every effort to acknowledge your contributions.
@@ -159,6 +163,7 @@ We regularly monitor and update our dependencies to address security vulnerabili
 - **Automated Scanning**: GitHub Dependabot scans for vulnerable dependencies
 - **Security Advisories**: We monitor security advisories for Go and our dependencies
 - **Update Policy**: Security updates are prioritized and released quickly
+- **Recent Fixes**: See [SECURITY_UPDATES.md](SECURITY_UPDATES.md) for recent vulnerability fixes
 
 ## Security Auditing
 
@@ -210,4 +215,4 @@ We'd like to thank the following individuals for responsibly disclosing security
 
 ---
 
-Last Updated: August 2025
+Last Updated: December 2024
