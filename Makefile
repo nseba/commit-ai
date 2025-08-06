@@ -54,7 +54,7 @@ build-all: ## Build for all platforms
 	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe $(MAIN_PATH)
 
 install: build ## Install the binary to $GOPATH/bin
-	go install $(LDFLAGS) $(MAIN_PATH)
+	cp $(BUILD_DIR)/$(BINARY_NAME) $(shell go env GOPATH)/bin/$(BINARY_NAME)
 
 uninstall: ## Remove the binary from $GOPATH/bin
 	rm -f $(shell go env GOPATH)/bin/$(BINARY_NAME)
