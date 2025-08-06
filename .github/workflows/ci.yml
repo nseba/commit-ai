@@ -227,8 +227,6 @@ jobs:
             - name: Update Homebrew formula
               uses: dawidd6/action-homebrew-bump-formula@v3
               with:
-                  token: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
+                  token: ${{ secrets.GITHUB_TOKEN }}
                   formula: commit-ai
                   tap: nseba/homebrew-tools
-              env:
-                  HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
