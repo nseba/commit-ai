@@ -4,7 +4,8 @@
 # Automatically determines the next version based on conventional commits
 # and generates changelog entries
 
-set -e
+# Remove set -e to handle errors gracefully
+# set -e
 
 # Configuration
 REPO_OWNER="nseba"
@@ -113,27 +114,27 @@ analyze_commits() {
 
     print_info "Analyzing commits from $from_ref to $to_ref..."
 
-    # Get commit messages
-    local commits
+    # Get commit messages with safe handling of special characters
+    local commits_file=$(mktemp)
     if [ "$from_ref" = "v0.0.0" ]; then
-        commits=$(git log --pretty=format:"%s" "$to_ref" 2>/dev/null || echo "")
+        git log --pretty=format:"%s" "$to_ref" > "$commits_file" 2>/dev/null || echo "" > "$commits_file"
     else
-        commits=$(git log --pretty=format:"%s" "$from_ref..$to_ref" 2>/dev/null || echo "")
+        git log --pretty=format:"%s" "$from_ref..$to_ref" > "$commits_file" 2>/dev/null || echo "" > "$commits_file"
     fi
 
-    if [ -z "$commits" ]; then
+    if [ ! -s "$commits_file" ]; then
         print_warning "No commits found in range $from_ref..$to_ref"
+        rm -f "$commits_file"
         echo "none"
         return 0
     fi
 
-    local commit_count=0
-    echo "$commits" | while IFS= read -r commit_msg; do
+    # Display commits safely
+    while IFS= read -r commit_msg || [ -n "$commit_msg" ]; do
         if [ -n "$commit_msg" ]; then
             echo "  📝 $commit_msg"
-            commit_count=$((commit_count + 1))
         fi
-    done
+    done < "$commits_file"
     echo ""
 
     # Initialize flags
@@ -142,36 +143,35 @@ analyze_commits() {
     local has_fix=false
 
     # Check for breaking changes
-    if echo "$commits" | grep -qE "^[^:]*!:|BREAKING CHANGE|^[a-z]+\([^)]*\)!:"; then
+    if grep -qE "^[^:]*!:|BREAKING CHANGE|^[a-z]+\([^)]*\)!:" "$commits_file"; then
         has_breaking=true
         print_info "🚨 Breaking changes detected"
     fi
 
     # Check for features
-    if echo "$commits" | grep -qE "^feat(\([^)]*\))?:"; then
+    if grep -qE "^feat(\([^)]*\))?:" "$commits_file"; then
         has_feature=true
         print_info "✨ New features detected"
     fi
 
     # Check for fixes
-    if echo "$commits" | grep -qE "^fix(\([^)]*\))?:|^security(\([^)]*\))?:"; then
+    if grep -qE "^fix(\([^)]*\))?:|^security(\([^)]*\))?:" "$commits_file"; then
         has_fix=true
         print_info "🐛 Bug fixes detected"
     fi
 
+    # Cleanup
+    rm -f "$commits_file"
+
     # Determine bump type
     if [ "$has_breaking" = true ]; then
         echo "major"
-        return 0
     elif [ "$has_feature" = true ]; then
         echo "minor"
-        return 0
     elif [ "$has_fix" = true ]; then
         echo "patch"
-        return 0
     else
         echo "none"
-        return 0
     fi
 }
 
@@ -390,7 +390,7 @@ semantic_release() {
         if [ "$dry_run" = true ]; then
             print_info "This was a dry run. No changes made."
         fi
-        return 0
+        exit 0
     fi
 
     # Calculate next version
@@ -417,7 +417,7 @@ semantic_release() {
         print_info "Bump type: $bump_type"
         print_info "Changelog: $changelog_file"
         print_info "No changes made (dry run mode)"
-        return 0
+        exit 0
     fi
 
     # Confirm release
@@ -434,7 +434,7 @@ semantic_release() {
         read -r confirm
         if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
             print_warning "Release cancelled"
-            return 0
+            exit 0
         fi
     fi
 
