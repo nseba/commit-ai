@@ -63,11 +63,11 @@ func Load(configFile string) (*Config, error) {
 func (c *Config) Save(configFile string) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(configFile)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	file, err := os.Create(configFile)
+	file, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to create config file: %w", err)
 	}

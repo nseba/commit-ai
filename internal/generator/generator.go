@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -42,7 +43,7 @@ func New(cfg *config.Config, configFile string) (*Generator, error) {
 
 	return &Generator{
 		config:   cfg,
-		client:   &http.Client{Timeout: 30 * time.Second},
+		client:   &http.Client{Timeout: 180 * time.Second},
 		template: tmpl,
 	}, nil
 }
@@ -187,6 +188,11 @@ func (g *Generator) generateWithOpenAI(prompt string) (string, error) {
 
 // loadTemplate loads and parses the prompt template file
 func loadTemplate(templatePath string) (*template.Template, error) {
+	// Validate template path to prevent path traversal
+	if err := validateTemplatePath(templatePath); err != nil {
+		return nil, fmt.Errorf("invalid template path: %w", err)
+	}
+
 	// Check if template file exists
 	content, err := os.ReadFile(templatePath)
 	if err != nil {
@@ -226,8 +232,37 @@ Commit Message:`
 
 // createDefaultTemplate creates a default template file
 func createDefaultTemplate(templatePath, content string) error {
-	if err := os.WriteFile(templatePath, []byte(content), 0o644); err != nil {
+	// Validate template path before creating
+	if err := validateTemplatePath(templatePath); err != nil {
+		return fmt.Errorf("invalid template path: %w", err)
+	}
+
+	// Ensure parent directory exists
+	dir := filepath.Dir(templatePath)
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		return fmt.Errorf("failed to create template directory: %w", err)
+	}
+
+	if err := os.WriteFile(templatePath, []byte(content), 0o600); err != nil {
 		return fmt.Errorf("failed to write template file: %w", err)
 	}
+	return nil
+}
+
+// validateTemplatePath validates that a template path is safe
+func validateTemplatePath(templatePath string) error {
+	// Clean the path to resolve any .. or . components
+	cleanPath := filepath.Clean(templatePath)
+
+	// Check for path traversal attempts
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("path traversal detected in template path: %s", templatePath)
+	}
+
+	// For security, only allow templates in user's home directory or absolute paths to known safe locations
+	if !filepath.IsAbs(cleanPath) {
+		return fmt.Errorf("template path must be absolute: %s", templatePath)
+	}
+
 	return nil
 }

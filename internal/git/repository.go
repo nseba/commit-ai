@@ -158,6 +158,9 @@ func (r *Repository) getInitialCommitDiff() (string, error) {
 			continue
 		}
 
+		if err := r.validatePath(file); err != nil {
+			continue // Skip invalid paths
+		}
 		filePath := filepath.Join(r.path, file)
 		content, err := os.ReadFile(filePath)
 		if err != nil {
@@ -175,6 +178,9 @@ func (r *Repository) getInitialCommitDiff() (string, error) {
 
 // getFileDiff gets the diff for a specific file
 func (r *Repository) getFileDiff(filename string, headTree *object.Tree) (string, error) {
+	if err := r.validatePath(filename); err != nil {
+		return "", err
+	}
 	filePath := filepath.Join(r.path, filename)
 
 	// Read current file content
@@ -395,4 +401,40 @@ func addMinusPrefix(content string) string {
 		lines[i] = "-" + line
 	}
 	return strings.Join(lines, "\n")
+}
+
+// validatePath validates that a file path is safe and doesn't contain path traversal attempts
+func (r *Repository) validatePath(filename string) error {
+	// Clean the path to resolve any .. or . components
+	cleanPath := filepath.Clean(filename)
+
+	// Check for path traversal attempts
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("path traversal detected in filename: %s", filename)
+	}
+
+	// Ensure the path doesn't start with / (absolute path)
+	if filepath.IsAbs(cleanPath) {
+		return fmt.Errorf("absolute path not allowed: %s", filename)
+	}
+
+	// Additional check: ensure the resolved path is within the repository
+	fullPath := filepath.Join(r.path, cleanPath)
+	resolvedPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve path: %w", err)
+	}
+
+	repoPath, err := filepath.Abs(r.path)
+	if err != nil {
+		return fmt.Errorf("failed to resolve repository path: %w", err)
+	}
+
+	// Check if the resolved path is within the repository
+	relPath, err := filepath.Rel(repoPath, resolvedPath)
+	if err != nil || strings.HasPrefix(relPath, "..") {
+		return fmt.Errorf("path outside repository: %s", filename)
+	}
+
+	return nil
 }
