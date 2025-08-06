@@ -124,7 +124,7 @@ run-example: build setup-example ## Build and run with example configuration
 release-prep: clean lint test build-all ## Prepare for release
 	@echo "Release preparation complete. Binaries are in $(BUILD_DIR)/"
 
-release: ## Create GitHub release (requires gh CLI)
+release-gh: ## Create GitHub release using gh CLI (requires gh CLI)
 	@if ! command -v gh >/dev/null 2>&1; then \
 		echo "Error: GitHub CLI (gh) is required for releases"; \
 		exit 1; \
@@ -179,6 +179,202 @@ security-update: ## Update dependencies for security fixes
 	go get -u all
 	go mod tidy
 	@echo "Dependencies updated. Please test and commit changes."
+
+# Release targets
+release-tag: ## Create and push a version tag (usage: make release-tag VERSION=v1.0.0)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is required. Usage: make release-tag VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	@if ! echo "$(VERSION)" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$$'; then \
+		echo "Error: Invalid version format. Use semantic versioning (e.g., v1.0.0)"; \
+		exit 1; \
+	fi
+	@if git tag -l | grep -q "^$(VERSION)$$"; then \
+		echo "Error: Tag $(VERSION) already exists locally"; \
+		exit 1; \
+	fi
+	@echo "Creating and pushing release tag $(VERSION)..."
+	@git tag $(VERSION) -m "Release $(VERSION)"
+	@git push origin $(VERSION)
+	@echo "✅ Release tag $(VERSION) created and pushed successfully!"
+	@echo "🚀 GitHub Actions will now build and create the release"
+	@echo "📊 Monitor progress at: https://github.com/$(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME)/actions"
+
+release-delete-tag: ## Delete a version tag locally and remotely (usage: make release-delete-tag VERSION=v1.0.0)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is required. Usage: make release-delete-tag VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	@echo "Deleting tag $(VERSION) locally and remotely..."
+	@git tag -d $(VERSION) 2>/dev/null || echo "Tag $(VERSION) not found locally"
+	@git push origin :refs/tags/$(VERSION) 2>/dev/null || echo "Tag $(VERSION) not found on remote"
+	@echo "✅ Tag $(VERSION) deleted successfully"
+
+release-manual: ## Create release manually using script (usage: make release-manual VERSION=v1.0.0)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is required. Usage: make release-manual VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	@if [ ! -f "./scripts/create-release.sh" ]; then \
+		echo "Error: Manual release script not found at ./scripts/create-release.sh"; \
+		exit 1; \
+	fi
+	@echo "Creating release manually..."
+	@./scripts/create-release.sh --version $(VERSION)
+
+release-status: ## Check latest release status
+	@echo "Checking release status..."
+	@if command -v gh >/dev/null 2>&1; then \
+		gh release list --limit 5; \
+	else \
+		echo "Install GitHub CLI (gh) to see release status"; \
+		echo "Latest tags:"; \
+		git tag --sort=-version:refname | head -5; \
+	fi
+
+release-check: ## Run comprehensive pre-release checks
+	@echo "🔍 Running pre-release checks..."
+	@echo ""
+	@echo "1. Checking git status..."
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		echo "❌ Working directory is not clean. Please commit or stash changes."; \
+		exit 1; \
+	fi
+	@echo "✅ Working directory is clean"
+	@echo ""
+	@echo "2. Checking current branch..."
+	@CURRENT_BRANCH=$$(git branch --show-current); \
+	if [ "$$CURRENT_BRANCH" != "main" ]; then \
+		echo "⚠️  Not on main branch (currently on: $$CURRENT_BRANCH)"; \
+		echo "Continue? (y/N):"; \
+		read -r CONTINUE; \
+		if [ "$$CONTINUE" != "y" ] && [ "$$CONTINUE" != "Y" ]; then \
+			exit 1; \
+		fi; \
+	fi
+	@echo "✅ Branch check passed"
+	@echo ""
+	@echo "3. Running tests..."
+	@$(MAKE) test
+	@echo "✅ Tests passed"
+	@echo ""
+	@echo "4. Running security checks..."
+	@$(MAKE) security-all
+	@echo "✅ Security checks passed"
+	@echo ""
+	@echo "5. Testing build..."
+	@$(MAKE) build
+	@echo "✅ Build test passed"
+	@echo ""
+	@echo "🎉 All pre-release checks passed! Ready for release."
+
+release: ## Create a full release with pre-checks (usage: make release VERSION=v1.0.0)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is required. Usage: make release VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	@echo "🚀 Starting release process for $(VERSION)..."
+	@echo ""
+	@$(MAKE) release-check
+	@echo ""
+	@echo "📝 Creating release tag..."
+	@$(MAKE) release-tag VERSION=$(VERSION)
+	@echo ""
+	@echo "✅ Release $(VERSION) initiated successfully!"
+	@echo "📊 Monitor GitHub Actions: https://github.com/$(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME)/actions"
+	@echo "📦 Release will be available at: https://github.com/$(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME)/releases/tag/$(VERSION)"
+
+release-next-patch: ## Suggest next patch version (e.g., v1.0.0 -> v1.0.1)
+	@LATEST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"); \
+	if echo "$$LATEST_TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+		MAJOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\1/'); \
+		MINOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\2/'); \
+		PATCH=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\3/'); \
+		NEXT_PATCH=$$((PATCH + 1)); \
+		NEXT_VERSION="v$$MAJOR.$$MINOR.$$NEXT_PATCH"; \
+		echo "Current version: $$LATEST_TAG"; \
+		echo "Suggested next patch: $$NEXT_VERSION"; \
+		echo ""; \
+		echo "To create patch release: make release VERSION=$$NEXT_VERSION"; \
+	else \
+		echo "Current version: $$LATEST_TAG"; \
+		echo "Suggested first release: v1.0.0"; \
+		echo ""; \
+		echo "To create first release: make release VERSION=v1.0.0"; \
+	fi
+
+release-next-minor: ## Suggest next minor version (e.g., v1.0.0 -> v1.1.0)
+	@LATEST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"); \
+	if echo "$$LATEST_TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+		MAJOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\1/'); \
+		MINOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\2/'); \
+		NEXT_MINOR=$$((MINOR + 1)); \
+		NEXT_VERSION="v$$MAJOR.$$NEXT_MINOR.0"; \
+		echo "Current version: $$LATEST_TAG"; \
+		echo "Suggested next minor: $$NEXT_VERSION"; \
+		echo ""; \
+		echo "To create minor release: make release VERSION=$$NEXT_VERSION"; \
+	else \
+		echo "Current version: $$LATEST_TAG"; \
+		echo "Suggested first release: v1.0.0"; \
+		echo ""; \
+		echo "To create first release: make release VERSION=v1.0.0"; \
+	fi
+
+release-next-major: ## Suggest next major version (e.g., v1.0.0 -> v2.0.0)
+	@LATEST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"); \
+	if echo "$$LATEST_TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+		MAJOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\1/'); \
+		NEXT_MAJOR=$$((MAJOR + 1)); \
+		NEXT_VERSION="v$$NEXT_MAJOR.0.0"; \
+		echo "Current version: $$LATEST_TAG"; \
+		echo "Suggested next major: $$NEXT_VERSION"; \
+		echo ""; \
+		echo "To create major release: make release VERSION=$$NEXT_VERSION"; \
+	else \
+		echo "Current version: $$LATEST_TAG"; \
+		echo "Suggested first release: v1.0.0"; \
+		echo ""; \
+		echo "To create first release: make release VERSION=v1.0.0"; \
+	fi
+
+# Quick release shortcuts
+release-patch: ## Create patch release with auto-version (alias for release with next patch)
+	@LATEST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"); \
+	if echo "$$LATEST_TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+		MAJOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\1/'); \
+		MINOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\2/'); \
+		PATCH=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\3/'); \
+		NEXT_PATCH=$$((PATCH + 1)); \
+		NEXT_VERSION="v$$MAJOR.$$MINOR.$$NEXT_PATCH"; \
+		$(MAKE) release VERSION=$$NEXT_VERSION; \
+	else \
+		$(MAKE) release VERSION=v1.0.0; \
+	fi
+
+release-minor: ## Create minor release with auto-version (alias for release with next minor)
+	@LATEST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"); \
+	if echo "$$LATEST_TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+		MAJOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\1/'); \
+		MINOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\2/'); \
+		NEXT_MINOR=$$((MINOR + 1)); \
+		NEXT_VERSION="v$$MAJOR.$$NEXT_MINOR.0"; \
+		$(MAKE) release VERSION=$$NEXT_VERSION; \
+	else \
+		$(MAKE) release VERSION=v1.0.0; \
+	fi
+
+release-major: ## Create major release with auto-version (alias for release with next major)
+	@LATEST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"); \
+	if echo "$$LATEST_TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+		MAJOR=$$(echo $$LATEST_TAG | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\1/'); \
+		NEXT_MAJOR=$$((MAJOR + 1)); \
+		NEXT_VERSION="v$$NEXT_MAJOR.0.0"; \
+		$(MAKE) release VERSION=$$NEXT_VERSION; \
+	else \
+		$(MAKE) release VERSION=v1.0.0; \
+	fi
 
 # Documentation
 docs: ## Generate documentation
