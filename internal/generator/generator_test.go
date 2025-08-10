@@ -364,3 +364,64 @@ func TestGenerateWithOllama_InvalidJSON(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to decode Ollama response")
 }
+
+func TestCleanResponse(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "removes bold commit message label",
+			input:    "**Commit Message:** fix: update user authentication",
+			expected: "fix: update user authentication",
+		},
+		{
+			name:     "removes plain commit message label",
+			input:    "Commit Message: feat: add new dashboard",
+			expected: "feat: add new dashboard",
+		},
+		{
+			name:     "removes lowercase commit message label",
+			input:    "**Commit message:** docs: update README",
+			expected: "docs: update README",
+		},
+		{
+			name:     "removes plain lowercase commit message label",
+			input:    "Commit message: style: format code",
+			expected: "style: format code",
+		},
+		{
+			name:     "removes uppercase commit message label",
+			input:    "**COMMIT MESSAGE:** refactor: simplify API",
+			expected: "refactor: simplify API",
+		},
+		{
+			name:     "removes plain uppercase commit message label",
+			input:    "COMMIT MESSAGE: test: add unit tests",
+			expected: "test: add unit tests",
+		},
+		{
+			name:     "handles message without label",
+			input:    "fix: resolve bug in payment processing",
+			expected: "fix: resolve bug in payment processing",
+		},
+		{
+			name:     "handles empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "handles label with extra whitespace",
+			input:    "**Commit Message:**   feat: implement OAuth",
+			expected: "feat: implement OAuth",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cleanResponse(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

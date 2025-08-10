@@ -119,7 +119,7 @@ func (g *Generator) generateWithOllama(prompt string) (string, error) {
 		return "", fmt.Errorf("failed to decode Ollama response: %w", err)
 	}
 
-	return strings.TrimSpace(ollamaResp.Response), nil
+	return cleanResponse(strings.TrimSpace(ollamaResp.Response)), nil
 }
 
 // generateWithOpenAI generates commit message using OpenAI API
@@ -183,7 +183,27 @@ func (g *Generator) generateWithOpenAI(prompt string) (string, error) {
 		return "", fmt.Errorf("no response from OpenAI")
 	}
 
-	return strings.TrimSpace(openaiResp.Choices[0].Message.Content), nil
+	return cleanResponse(strings.TrimSpace(openaiResp.Choices[0].Message.Content)), nil
+}
+
+// cleanResponse removes common prompt artifacts from AI responses
+func cleanResponse(response string) string {
+	// Remove common prompt labels that might appear in responses
+	cleanPatterns := []string{
+		"**Commit Message:**",
+		"Commit Message:",
+		"**Commit message:**",
+		"Commit message:",
+		"**COMMIT MESSAGE:**",
+		"COMMIT MESSAGE:",
+	}
+
+	for _, pattern := range cleanPatterns {
+		response = strings.TrimPrefix(response, pattern)
+		response = strings.TrimSpace(response)
+	}
+
+	return response
 }
 
 // loadTemplate loads and parses the prompt template file
