@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"time"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	gitignore "github.com/sabhiram/go-gitignore"
@@ -401,6 +403,92 @@ func addMinusPrefix(content string) string {
 		lines[i] = "-" + line
 	}
 	return strings.Join(lines, "\n")
+}
+
+// GetLastCommitMessage returns the message of the last commit
+func (r *Repository) GetLastCommitMessage() (string, error) {
+	head, err := r.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("failed to get HEAD: %w", err)
+	}
+
+	commit, err := r.repo.CommitObject(head.Hash())
+	if err != nil {
+		return "", fmt.Errorf("failed to get commit object: %w", err)
+	}
+
+	return commit.Message, nil
+}
+
+// Commit creates a new commit with the given message
+func (r *Repository) Commit(message string) error {
+	// First check if there are staged changes
+	status, err := r.workTree.Status()
+	if err != nil {
+		return fmt.Errorf("failed to get status: %w", err)
+	}
+
+	hasStagedChanges := false
+	for _, fileStatus := range status {
+		if fileStatus.Staging != git.Unmodified {
+			hasStagedChanges = true
+			break
+		}
+	}
+
+	if !hasStagedChanges {
+		return fmt.Errorf("no staged changes to commit")
+	}
+
+	// Create the commit
+	_, err = r.workTree.Commit(message, &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  getGitConfigValue("user.name"),
+			Email: getGitConfigValue("user.email"),
+			When:  time.Now(),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create commit: %w", err)
+	}
+
+	return nil
+}
+
+// StageAll stages all changes in the working directory
+func (r *Repository) StageAll() error {
+	status, err := r.workTree.Status()
+	if err != nil {
+		return fmt.Errorf("failed to get status: %w", err)
+	}
+
+	for file := range status {
+		_, err = r.workTree.Add(file)
+		if err != nil {
+			return fmt.Errorf("failed to stage file %s: %w", file, err)
+		}
+	}
+
+	return nil
+}
+
+// getGitConfigValue gets a git config value
+func getGitConfigValue(key string) string {
+	// In a real implementation, you might want to read from git config
+	// For now, return default values or empty strings
+	switch key {
+	case "user.name":
+		if name := os.Getenv("GIT_AUTHOR_NAME"); name != "" {
+			return name
+		}
+		return "commit-ai"
+	case "user.email":
+		if email := os.Getenv("GIT_AUTHOR_EMAIL"); email != "" {
+			return email
+		}
+		return "commit-ai@localhost"
+	}
+	return ""
 }
 
 // validatePath validates that a file path is safe and doesn't contain path traversal attempts

@@ -13,9 +13,13 @@ import (
 )
 
 var (
-	cfgFile string
-	path    string
-	version = "dev" // Set by build flags
+	cfgFile       string
+	path          string
+	version       = "dev" // Set by build flags
+	showCommit    bool
+	editCommit    bool
+	commitChanges bool
+	stageAll      bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -47,12 +51,26 @@ and allows customization through configuration files and prompt templates.`,
 			return fmt.Errorf("invalid configuration: %w", err)
 		}
 
-		// Get git diff
+		// Get git repository
 		gitRepo, err := git.NewRepository(targetPath)
 		if err != nil {
 			return fmt.Errorf("failed to initialize git repository: %w", err)
 		}
 
+		// Handle show commit flag
+		if showCommit {
+			return handleShowCommit(gitRepo)
+		}
+
+		// Stage all changes if requested
+		if stageAll {
+			if err := gitRepo.StageAll(); err != nil {
+				return fmt.Errorf("failed to stage changes: %w", err)
+			}
+			fmt.Println("Staged all changes")
+		}
+
+		// Get git diff
 		diff, err := gitRepo.GetDiff()
 		if err != nil {
 			return fmt.Errorf("failed to get git diff: %w", err)
@@ -85,6 +103,11 @@ and allows customization through configuration files and prompt templates.`,
 			return fmt.Errorf("failed to generate commit message: %w", err)
 		}
 
+		// Handle interactive editing or commit
+		if editCommit || commitChanges {
+			return handleInteractiveMode(commitMessage, gitRepo)
+		}
+
 		// Output the commit message
 		fmt.Print(commitMessage)
 		return nil
@@ -107,6 +130,85 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+// handleShowCommit shows the last commit message
+func handleShowCommit(gitRepo *git.Repository) error {
+	lastCommit, err := gitRepo.GetLastCommitMessage()
+	if err != nil {
+		return fmt.Errorf("failed to get last commit message: %w", err)
+	}
+
+	editor := NewInteractiveEditor()
+	editor.DisplayMessage("Last Commit Message", lastCommit)
+	return nil
+}
+
+// handleInteractiveMode handles interactive editing and committing
+func handleInteractiveMode(generatedMessage string, gitRepo *git.Repository) error {
+	editor := NewInteractiveEditor()
+	finalMessage := generatedMessage
+
+	// Show generated message
+	editor.DisplayMessage("Generated Commit Message", generatedMessage)
+
+	if editCommit {
+		// Ask user how they want to edit
+		editOptions := []string{
+			"Keep as is",
+			"Edit inline",
+			"Edit with external editor",
+		}
+
+		choice, err := editor.PromptChoice("How would you like to proceed?", editOptions)
+		if err != nil {
+			return fmt.Errorf("failed to get user choice: %w", err)
+		}
+
+		var editMode EditMode
+		switch choice {
+		case 0:
+			editMode = EditModeNone
+		case 1:
+			editMode = EditModeInline
+		case 2:
+			editMode = EditModeEditor
+		}
+
+		if editMode != EditModeNone {
+			finalMessage, err = editor.EditMessage(generatedMessage, editMode)
+			if err != nil {
+				return fmt.Errorf("failed to edit message: %w", err)
+			}
+		}
+	}
+
+	if commitChanges {
+		// Show final message
+		if finalMessage != generatedMessage {
+			editor.DisplayMessage("Final Commit Message", finalMessage)
+		}
+
+		// Confirm commit
+		shouldCommit, err := editor.PromptYesNo("Do you want to commit with this message?", true)
+		if err != nil {
+			return fmt.Errorf("failed to get confirmation: %w", err)
+		}
+
+		if shouldCommit {
+			if err := gitRepo.Commit(finalMessage); err != nil {
+				return fmt.Errorf("failed to commit: %w", err)
+			}
+			fmt.Println("✓ Committed successfully!")
+		} else {
+			fmt.Println("Commit cancelled.")
+		}
+	} else {
+		// Just output the final message
+		fmt.Printf("\nFinal message:\n%s\n", finalMessage)
+	}
+
+	return nil
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 
@@ -116,6 +218,12 @@ func init() {
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/commit-ai/config.toml)")
 	rootCmd.PersistentFlags().StringVarP(&path, "path", "p", "", "path to git repository (default is current directory)")
+
+	// Feature flags
+	rootCmd.Flags().BoolVarP(&showCommit, "show", "s", false, "show the last commit message")
+	rootCmd.Flags().BoolVarP(&editCommit, "edit", "e", false, "allow editing of the generated commit message")
+	rootCmd.Flags().BoolVarP(&commitChanges, "commit", "c", false, "commit the changes with the generated/edited message")
+	rootCmd.Flags().BoolVarP(&stageAll, "add", "a", false, "stage all changes before generating commit message")
 }
 
 // initConfig reads in config file and ENV variables if set.

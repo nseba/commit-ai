@@ -65,6 +65,59 @@ Download the latest binary from the [releases page](https://github.com/nseba/com
    git commit -m "$(commit-ai)"
    ```
 
+## Interactive Features
+
+Commit-AI now includes interactive features for a better workflow:
+
+### Show Last Commit Message
+```bash
+# Display the last commit message
+commit-ai --show
+# or
+commit-ai -s
+```
+
+### Interactive Editing
+```bash
+# Generate a message and allow editing before use
+commit-ai --edit
+# or
+commit-ai -e
+
+# This will:
+# 1. Generate an AI commit message
+# 2. Show you the generated message
+# 3. Ask how you want to proceed (keep, edit inline, or edit with external editor)
+```
+
+### Auto-commit with Generated Message
+```bash
+# Stage changes and commit in one step
+commit-ai --add --commit
+# or
+commit-ai -a -c
+
+# This will:
+# 1. Stage all changes (git add .)
+# 2. Generate a commit message
+# 3. Ask for confirmation
+# 4. Create the commit
+```
+
+### Combined Interactive Workflow
+```bash
+# Stage, generate, edit, and commit interactively
+commit-ai --add --edit --commit
+# or
+commit-ai -a -e -c
+
+# This provides the full interactive experience:
+# 1. Stages all changes
+# 2. Generates AI commit message
+# 3. Allows you to edit the message
+# 4. Commits with final message after confirmation
+```
+
 ## Configuration
 
 Commit-AI looks for configuration in `~/.config/commit-ai/config.toml`. If it doesn't exist, it will be created with default values.
@@ -187,6 +240,38 @@ test/
 Place `.caiignore` files at any level in your repository. Commit-AI will search up the directory tree and apply all applicable ignore patterns.
 
 ## Advanced Usage
+
+### Command Line Options
+
+Commit-AI supports several command-line flags for different workflows:
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--show` | `-s` | Show the last commit message |
+| `--edit` | `-e` | Allow editing of the generated commit message |
+| `--commit` | `-c` | Commit the changes with the generated/edited message |
+| `--add` | `-a` | Stage all changes before generating commit message |
+| `--path` | `-p` | Specify path to git repository |
+| `--config` | | Specify config file path |
+
+#### Examples
+
+```bash
+# Show last commit
+commit-ai --show
+
+# Generate message with editing option
+commit-ai --edit
+
+# Stage all and commit interactively
+commit-ai --add --commit
+
+# Full interactive workflow
+commit-ai --add --edit --commit
+
+# Work on specific repository
+commit-ai --path /path/to/repo --show
+```
 
 ### Environment Variables
 
