@@ -96,6 +96,8 @@ func (ie *InteractiveEditor) EditMessage(message string, mode EditMode) (string,
 		return ie.editInline(message)
 	case EditModeEditor:
 		return ie.editWithEditor(message)
+	case EditModeNone:
+		return message, nil
 	default:
 		return message, nil
 	}
@@ -140,22 +142,39 @@ func (ie *InteractiveEditor) editWithEditor(message string) (string, error) {
 		}
 	}
 
+	// Validate editor command for security
+	if strings.Contains(editor, "/") && !strings.HasPrefix(editor, "/usr/bin/") && !strings.HasPrefix(editor, "/bin/") {
+		if _, err := exec.LookPath(editor); err != nil {
+			return "", fmt.Errorf("editor not found in PATH: %s", editor)
+		}
+	}
+
 	// Create temporary file
 	tmpFile, err := os.CreateTemp("", "commit-ai-*.txt")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary file: %w", err)
 	}
-	defer os.Remove(tmpFile.Name())
-	defer tmpFile.Close()
+	tmpFileName := tmpFile.Name()
+	defer func() {
+		if err := os.Remove(tmpFileName); err != nil {
+			// Log error but don't fail the operation
+			fmt.Fprintf(os.Stderr, "Warning: failed to remove temporary file %s: %v\n", tmpFileName, err)
+		}
+	}()
 
 	// Write current message to file
 	if _, err := tmpFile.WriteString(message); err != nil {
+		if closeErr := tmpFile.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to close temporary file: %v\n", closeErr)
+		}
 		return "", fmt.Errorf("failed to write to temporary file: %w", err)
 	}
-	tmpFile.Close()
+	if err := tmpFile.Close(); err != nil {
+		return "", fmt.Errorf("failed to close temporary file: %w", err)
+	}
 
-	// Open editor
-	cmd := exec.Command(editor, tmpFile.Name())
+	// Open editor with validated command
+	cmd := exec.Command(editor, tmpFileName) // #nosec G204 -- editor is validated above
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -165,7 +184,7 @@ func (ie *InteractiveEditor) editWithEditor(message string) (string, error) {
 	}
 
 	// Read edited content
-	content, err := os.ReadFile(tmpFile.Name())
+	content, err := os.ReadFile(tmpFileName)
 	if err != nil {
 		return "", fmt.Errorf("failed to read edited file: %w", err)
 	}

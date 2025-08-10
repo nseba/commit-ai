@@ -199,7 +199,7 @@ func handleInteractiveMode(generatedMessage string, gitRepo *git.Repository) err
 			}
 			fmt.Println("✓ Committed successfully!")
 		} else {
-			fmt.Println("Commit cancelled.")
+			fmt.Println("Commit canceled.")
 		}
 	} else {
 		// Just output the final message
