@@ -184,7 +184,7 @@ func (ie *InteractiveEditor) editWithEditor(message string) (string, error) {
 	}
 
 	// Read edited content
-	content, err := os.ReadFile(tmpFileName)
+	content, err := os.ReadFile(tmpFileName) // #nosec G304 -- tmpFileName is from os.CreateTemp, safe path
 	if err != nil {
 		return "", fmt.Errorf("failed to read edited file: %w", err)
 	}
