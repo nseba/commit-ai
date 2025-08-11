@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Git-aware configuration discovery from repository root
 - Partial configuration overrides (only specify values you want to change)
 - Directory-specific configuration support for monorepos
+
+### Security
+- Added path validation for `.commitai` configuration files to prevent path traversal attacks
+- Added validation for `.git` file reading to ensure safe git repository detection
+- Configuration file paths are now validated before processing to prevent malicious file access
 - Initial release of Commit-AI CLI tool
 - Support for AI-powered commit message generation from git diffs
 - Multiple AI provider support (Ollama, OpenAI)

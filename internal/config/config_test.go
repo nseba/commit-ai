@@ -484,3 +484,146 @@ func TestLoadProjectConfig_InvalidTOML(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to decode project config file")
 }
+
+func TestValidateGitPath(t *testing.T) {
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name     string
+		gitDir   string
+		basePath string
+		wantErr  bool
+		errMsg   string
+	}{
+		{
+			name:     "valid git path",
+			gitDir:   filepath.Join(tempDir, ".git"),
+			basePath: tempDir,
+			wantErr:  false,
+		},
+		{
+			name:     "path traversal in gitDir",
+			gitDir:   tempDir + "/../malicious/.git",
+			basePath: tempDir,
+			wantErr:  true,
+			errMsg:   "path traversal detected",
+		},
+		{
+			name:     "invalid git path structure",
+			gitDir:   filepath.Join(tempDir, "notgit"),
+			basePath: tempDir,
+			wantErr:  true,
+			errMsg:   "invalid git path",
+		},
+		{
+			name:     "path with double dots",
+			gitDir:   tempDir + "/../test/.git",
+			basePath: tempDir,
+			wantErr:  true,
+			errMsg:   "path traversal detected",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateGitPath(tt.gitDir, tt.basePath)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestValidateProjectConfigPath(t *testing.T) {
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name       string
+		configFile string
+		wantErr    bool
+		errMsg     string
+	}{
+		{
+			name:       "valid config path",
+			configFile: filepath.Join(tempDir, ".commitai"),
+			wantErr:    false,
+		},
+		{
+			name:       "path traversal attempt",
+			configFile: "../../../etc/passwd",
+			wantErr:    true,
+			errMsg:     "path traversal detected",
+		},
+		{
+			name:       "invalid file extension",
+			configFile: filepath.Join(tempDir, "config.toml"),
+			wantErr:    true,
+			errMsg:     "invalid config file extension",
+		},
+		{
+			name:       "path with traversal components",
+			configFile: tempDir + "/../malicious/.commitai",
+			wantErr:    true,
+			errMsg:     "path traversal detected",
+		},
+		{
+			name:       "root path",
+			configFile: "/.commitai",
+			wantErr:    true,
+			errMsg:     "cannot use root directory",
+		},
+		{
+			name:       "empty path with extension",
+			configFile: ".commitai",
+			wantErr:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateProjectConfigPath(tt.configFile)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestLoadProjectConfig_SecurityValidation(t *testing.T) {
+	tempDir := t.TempDir()
+	cfg := DefaultConfig()
+
+	// Try to load a file with invalid extension - should fail
+	invalidFile := filepath.Join(tempDir, "malicious.toml")
+	err := cfg.loadProjectConfig(invalidFile)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid config file extension")
+
+	// Try to load a file with path traversal - should fail
+	traversalFile := "../../../malicious.commitai"
+	err = cfg.loadProjectConfig(traversalFile)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "path traversal detected")
+
+	// Try root directory file - should fail
+	rootFile := "/.commitai"
+	err = cfg.loadProjectConfig(rootFile)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "cannot use root directory")
+
+	// Valid file should work
+	validFile := filepath.Join(tempDir, ".commitai")
+	validContent := `CAI_MODEL = "valid"`
+	err = os.WriteFile(validFile, []byte(validContent), 0o644)
+	require.NoError(t, err)
+
+	err = cfg.loadProjectConfig(validFile)
+	require.NoError(t, err)
+	assert.Equal(t, "valid", cfg.Model)
+}

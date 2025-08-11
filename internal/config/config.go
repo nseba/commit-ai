@@ -140,6 +140,11 @@ func (c *Config) applyProjectConfig(projectPath string) error {
 // Only non-empty values from the project configuration are used to override
 // existing configuration values, allowing for partial configuration overrides.
 func (c *Config) loadProjectConfig(configFile string) error {
+	// Validate the config file path for security (always validate, regardless of file existence)
+	if err := validateProjectConfigPath(configFile); err != nil {
+		return fmt.Errorf("invalid project config path %s: %w", configFile, err)
+	}
+
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		return nil // File doesn't exist, skip
 	}
@@ -194,9 +199,11 @@ func findGitRoot(startPath string) (string, error) {
 				return currentPath, nil
 			}
 			// .git file (worktree or submodule)
-			content, err := os.ReadFile(gitDir)
-			if err == nil && strings.HasPrefix(string(content), "gitdir:") {
-				return currentPath, nil
+			if err := validateGitPath(gitDir, currentPath); err == nil {
+				content, err := os.ReadFile(gitDir)
+				if err == nil && strings.HasPrefix(string(content), "gitdir:") {
+					return currentPath, nil
+				}
 			}
 		}
 
@@ -209,6 +216,59 @@ func findGitRoot(startPath string) (string, error) {
 	}
 
 	return "", fmt.Errorf("not in a git repository")
+}
+
+// validateGitPath validates that the .git file path is safe to read
+func validateGitPath(gitDir, basePath string) error {
+	// Check for path traversal attempts first (before cleaning)
+	if strings.Contains(gitDir, "..") {
+		return fmt.Errorf("path traversal detected in git path: %s", gitDir)
+	}
+
+	// Ensure the gitDir is exactly basePath + "/.git"
+	expectedPath := filepath.Join(basePath, ".git")
+	cleanGitDir := filepath.Clean(gitDir)
+	cleanExpected := filepath.Clean(expectedPath)
+
+	if cleanGitDir != cleanExpected {
+		return fmt.Errorf("invalid git path: expected %s, got %s", cleanExpected, cleanGitDir)
+	}
+
+	return nil
+}
+
+// validateProjectConfigPath validates that a project config file path is safe
+func validateProjectConfigPath(configFile string) error {
+	// Check for path traversal attempts first (before cleaning)
+	if strings.Contains(configFile, "..") {
+		return fmt.Errorf("path traversal detected in config path")
+	}
+
+	// Clean the path to resolve any . components
+	cleanPath := filepath.Clean(configFile)
+
+	// Ensure the file ends with .commitai
+	if !strings.HasSuffix(cleanPath, ".commitai") {
+		return fmt.Errorf("invalid config file extension, must be .commitai")
+	}
+
+	// Convert to absolute path for additional validation
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve absolute path: %w", err)
+	}
+
+	// Basic sanity check - path should not be empty or in root directory
+	if absPath == "/" || absPath == "" || cleanPath == "/" || cleanPath == "" {
+		return fmt.Errorf("invalid config file path")
+	}
+
+	// Additional check: reject files directly in root directory
+	if strings.HasPrefix(absPath, "/") && strings.Count(absPath, "/") == 1 {
+		return fmt.Errorf("invalid config file path: cannot use root directory")
+	}
+
+	return nil
 }
 
 // findProjectConfigs finds all .commitai file paths from git root to project path.

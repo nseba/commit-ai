@@ -139,6 +139,7 @@ You can override global settings on a per-project basis using `.commitai` files.
 - **Partial overrides**: Only specify the settings you want to change
 - **Cascading configuration**: More specific directories override less specific ones
 - **Git-aware**: Automatically finds the git repository root and applies configurations hierarchically
+- **Secure**: Path validation prevents malicious file access and path traversal attacks
 
 **Configuration discovery:**
 1. If you're in a git repository, commit-ai will look for `.commitai` files from the git root up to your current directory
