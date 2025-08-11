@@ -489,11 +489,11 @@ func TestValidateGitPath(t *testing.T) {
 	tempDir := t.TempDir()
 
 	tests := []struct {
-		name     string
 		gitDir   string
 		basePath string
-		wantErr  bool
+		name     string
 		errMsg   string
+		wantErr  bool
 	}{
 		{
 			name:     "valid git path",
@@ -541,10 +541,10 @@ func TestValidateProjectConfigPath(t *testing.T) {
 	tempDir := t.TempDir()
 
 	tests := []struct {
-		name       string
 		configFile string
-		wantErr    bool
+		name       string
 		errMsg     string
+		wantErr    bool
 	}{
 		{
 			name:       "valid config path",

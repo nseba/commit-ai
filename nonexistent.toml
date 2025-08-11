@@ -1,0 +1,7 @@
+CAI_API_URL = "http://localhost:11434"
+CAI_MODEL = "llama2"
+CAI_PROVIDER = "ollama"
+CAI_API_TOKEN = ""
+CAI_LANGUAGE = "english"
+CAI_PROMPT_TEMPLATE = "default.txt"
+CAI_TIMEOUT_SECONDS = 300

@@ -200,6 +200,7 @@ func findGitRoot(startPath string) (string, error) {
 			}
 			// .git file (worktree or submodule)
 			if err := validateGitPath(gitDir, currentPath); err == nil {
+				// #nosec G304 -- gitDir path is validated by validateGitPath function above
 				content, err := os.ReadFile(gitDir)
 				if err == nil && strings.HasPrefix(string(content), "gitdir:") {
 					return currentPath, nil

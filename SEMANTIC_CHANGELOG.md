@@ -1,26 +1,39 @@
-# Release v1.1.2
+# Release v1.2.0
 
-**Release Date**: 2025-08-07
+**Release Date**: 2025-08-11
+
+
+## ✨ Features
+
+* feat(config): add project-local configuration with hierarchical loading ([5b84a91](https://github.com/nseba/commit-ai/commit/5b84a91))
+* feat(config): add cascading project-local config via .commitai ([e280466](https://github.com/nseba/commit-ai/commit/e280466))
 
 
 ## 🐛 Bug Fixes
 
-* fix(ci): use GitHub personal access token instead of HOMEBREW_GITHUB_API_TOKEN ([1038926](https://github.com/nseba/commit-ai/commit/1038926))
+* fix: try to clean up AI-generated message ([a1613be](https://github.com/nseba/commit-ai/commit/a1613be))
+
+
+## 📝 Other Changes
+
+* **Commit Message:** ([04cb6b2](https://github.com/nseba/commit-ai/commit/04cb6b2))
+* **Commit Message:** ([0943027](https://github.com/nseba/commit-ai/commit/0943027))
+* (feat) add interactive and editing capabilities ([f1489af](https://github.com/nseba/commit-ai/commit/f1489af))
 
 
 ## 📦 Installation
 
 ### Download Binary
-Download the appropriate binary for your platform from the [release assets](https://github.com/nseba/commit-ai/releases/tag/v1.1.2).
+Download the appropriate binary for your platform from the [release assets](https://github.com/nseba/commit-ai/releases/tag/v1.2.0).
 
 ### Using Go
 ```bash
-go install github.com/nseba/commit-ai/cmd@v1.1.2
+go install github.com/nseba/commit-ai/cmd@v1.2.0
 ```
 
 ### Using Docker
 ```bash
-docker pull nseba/commit-ai:v1.1.2
+docker pull nseba/commit-ai:v1.2.0
 ```
 
 ### Using Homebrew (if available)
@@ -31,7 +44,7 @@ brew install commit-ai
 
 ## 🔗 Links
 
-* **Full Changelog**: https://github.com/nseba/commit-ai/compare/v1.1.1...v1.1.2
+* **Full Changelog**: https://github.com/nseba/commit-ai/compare/v1.1.3...v1.2.0
 * **Docker Image**: https://hub.docker.com/r/nseba/commit-ai
 * **Documentation**: https://github.com/nseba/commit-ai#readme
 

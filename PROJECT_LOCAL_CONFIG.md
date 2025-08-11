@@ -34,7 +34,8 @@ Configuration is loaded with the following priority (highest to lowest):
 - **Path validation**: Prevents path traversal attacks (`../../../etc/passwd`)
 - **File extension validation**: Only `.commitai` files are processed
 - **Root directory protection**: Prevents access to system-critical paths
-- **Git file validation**: Safe `.git` file reading for repository detection
+- **Git file validation**: Safe `.git` file reading for repository detection with proper security annotations
+- **Pre-validation**: All file paths are validated before any file system operations
 
 ## 🏗️ Implementation Details
 
@@ -126,12 +127,15 @@ If you're in `my-monorepo/frontend/src/`:
 - **Malicious file extensions**: `config.toml`, `malicious.sh`
 - **Root directory access**: `/.commitai`
 - **Invalid git paths**: Manipulation of `.git` file reading
+- **File inclusion vulnerabilities**: Validated paths with security annotations
 
 ### Security Measures
 - Pre-validation of all file paths before processing
 - Strict file extension enforcement (`.commitai` only)
 - Path cleaning and canonicalization
 - Git directory validation for safe repository detection
+- Security annotations for code analysis tools (gosec compliance)
+- Memory-optimized struct layouts for performance
 
 ## 📋 Files Modified/Added
 
