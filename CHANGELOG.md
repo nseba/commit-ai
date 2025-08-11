@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Project-local configuration support via `.commitai` files
+- Hierarchical configuration system with cascading overrides
+- Git-aware configuration discovery from repository root
+- Partial configuration overrides (only specify values you want to change)
+- Directory-specific configuration support for monorepos
 - Initial release of Commit-AI CLI tool
 - Support for AI-powered commit message generation from git diffs
 - Multiple AI provider support (Ollama, OpenAI)

@@ -132,8 +132,6 @@ func (g *Generator) generateWithOpenAI(prompt string) (string, error) {
 				"content": prompt,
 			},
 		},
-		"max_tokens":  150,
-		"temperature": 0.7,
 	}
 
 	jsonData, err := json.Marshal(reqBody)

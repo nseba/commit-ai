@@ -40,8 +40,8 @@ and allows customization through configuration files and prompt templates.`,
 			targetPath = path
 		}
 
-		// Load configuration
-		cfg, err := config.Load(cfgFile)
+		// Load configuration with project-local overrides
+		cfg, err := config.LoadWithProjectPath(cfgFile, targetPath)
 		if err != nil {
 			return fmt.Errorf("failed to load configuration: %w", err)
 		}

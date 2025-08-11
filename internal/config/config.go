@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -38,25 +39,51 @@ func DefaultConfig() *Config {
 	}
 }
 
-// Load loads the configuration from the specified file
+// Load loads the configuration from the specified file and applies project-local overrides
+// from .commitai files found in the current directory.
 func Load(configFile string) (*Config, error) {
+	return LoadWithProjectPath(configFile, ".")
+}
+
+// LoadWithProjectPath loads the configuration with cascading project-local overrides.
+// Configuration is loaded in the following priority order (highest to lowest):
+//  1. Environment variables (CAI_*)
+//  2. Project-local .commitai files (more specific directories override less specific ones)
+//  3. Global configuration file
+//  4. Default values
+//
+// Project-local configurations are discovered by:
+//   - Finding the git repository root (if in a git repository)
+//   - Looking for .commitai files from the git root to the project path
+//   - Applying configurations in hierarchical order
+//
+// Parameters:
+//   - configFile: Path to the global configuration file
+//   - projectPath: Path to the project directory (used to find project-local configs)
+//
+// Returns the merged configuration with all overrides applied.
+func LoadWithProjectPath(configFile, projectPath string) (*Config, error) {
 	cfg := DefaultConfig()
 
-	// Check if config file exists
+	// Load global configuration
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		// If config file doesn't exist, create it with default values
 		if err := cfg.Save(configFile); err != nil {
 			return nil, fmt.Errorf("failed to create default config file: %w", err)
 		}
-		return cfg, nil
+	} else {
+		// Load configuration from file
+		if _, err := toml.DecodeFile(configFile, cfg); err != nil {
+			return nil, fmt.Errorf("failed to decode config file %s: %w", configFile, err)
+		}
 	}
 
-	// Load configuration from file
-	if _, err := toml.DecodeFile(configFile, cfg); err != nil {
-		return nil, fmt.Errorf("failed to decode config file %s: %w", configFile, err)
+	// Apply project-local configuration overrides
+	if err := cfg.applyProjectConfig(projectPath); err != nil {
+		return nil, fmt.Errorf("failed to apply project configuration: %w", err)
 	}
 
-	// Override with environment variables if present
+	// Override with environment variables if present (highest priority)
 	cfg.loadFromEnv()
 
 	return cfg, nil
@@ -83,6 +110,154 @@ func (c *Config) Save(configFile string) error {
 	}
 
 	return nil
+}
+
+// applyProjectConfig applies project-local configuration from .commitai files.
+// It finds the git repository root and looks for .commitai files from the root
+// to the project path, applying them in hierarchical order.
+func (c *Config) applyProjectConfig(projectPath string) error {
+	// Find the git repository root
+	gitRoot, err := findGitRoot(projectPath)
+	if err != nil {
+		// If not in a git repository, just use the project path
+		gitRoot = projectPath
+	}
+
+	// Look for .commitai files from git root up to current directory
+	configFiles := findProjectConfigs(gitRoot, projectPath)
+
+	// Apply configurations in order (git root first, then more specific)
+	for _, configFile := range configFiles {
+		if err := c.loadProjectConfig(configFile); err != nil {
+			return fmt.Errorf("failed to load project config %s: %w", configFile, err)
+		}
+	}
+
+	return nil
+}
+
+// loadProjectConfig loads and merges a project-local configuration file.
+// Only non-empty values from the project configuration are used to override
+// existing configuration values, allowing for partial configuration overrides.
+func (c *Config) loadProjectConfig(configFile string) error {
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		return nil // File doesn't exist, skip
+	}
+
+	// Create a temporary config to load project settings
+	projectCfg := &Config{}
+	if _, err := toml.DecodeFile(configFile, projectCfg); err != nil {
+		return fmt.Errorf("failed to decode project config file %s: %w", configFile, err)
+	}
+
+	// Merge non-empty values from project config into main config
+	if projectCfg.APIURL != "" {
+		c.APIURL = projectCfg.APIURL
+	}
+	if projectCfg.Model != "" {
+		c.Model = projectCfg.Model
+	}
+	if projectCfg.Provider != "" {
+		c.Provider = projectCfg.Provider
+	}
+	if projectCfg.APIToken != "" {
+		c.APIToken = projectCfg.APIToken
+	}
+	if projectCfg.Language != "" {
+		c.Language = projectCfg.Language
+	}
+	if projectCfg.PromptTemplate != "" {
+		c.PromptTemplate = projectCfg.PromptTemplate
+	}
+	if projectCfg.TimeoutSeconds != 0 {
+		c.TimeoutSeconds = projectCfg.TimeoutSeconds
+	}
+
+	return nil
+}
+
+// findGitRoot finds the git repository root by walking up the directory tree
+// starting from the given path, looking for a .git directory or file.
+// Returns an error if no git repository is found.
+func findGitRoot(startPath string) (string, error) {
+	absPath, err := filepath.Abs(startPath)
+	if err != nil {
+		return "", err
+	}
+
+	currentPath := absPath
+	for {
+		gitDir := filepath.Join(currentPath, ".git")
+		if info, err := os.Stat(gitDir); err == nil {
+			// Found .git directory or file
+			if info.IsDir() {
+				return currentPath, nil
+			}
+			// .git file (worktree or submodule)
+			content, err := os.ReadFile(gitDir)
+			if err == nil && strings.HasPrefix(string(content), "gitdir:") {
+				return currentPath, nil
+			}
+		}
+
+		parent := filepath.Dir(currentPath)
+		if parent == currentPath {
+			// Reached filesystem root
+			break
+		}
+		currentPath = parent
+	}
+
+	return "", fmt.Errorf("not in a git repository")
+}
+
+// findProjectConfigs finds all .commitai file paths from git root to project path.
+// Returns a slice of file paths in hierarchical order (git root first, then more specific).
+// The returned paths may not exist - existence is checked when loading.
+func findProjectConfigs(gitRoot, projectPath string) []string {
+	var configFiles []string
+
+	// Start from git root
+	absGitRoot, err := filepath.Abs(gitRoot)
+	if err != nil {
+		return configFiles
+	}
+
+	absProjectPath, err := filepath.Abs(projectPath)
+	if err != nil {
+		return configFiles
+	}
+
+	// Add .commitai file from git root if it exists
+	gitRootConfig := filepath.Join(absGitRoot, ".commitai")
+	configFiles = append(configFiles, gitRootConfig)
+
+	// If project path is different from git root, walk up from project path
+	if absProjectPath != absGitRoot {
+		currentPath := absProjectPath
+		for {
+			configFile := filepath.Join(currentPath, ".commitai")
+
+			// Don't duplicate the git root config
+			if configFile != gitRootConfig {
+				configFiles = append(configFiles, configFile)
+			}
+
+			// Stop when we reach git root
+			if currentPath == absGitRoot {
+				break
+			}
+
+			parent := filepath.Dir(currentPath)
+			if parent == currentPath {
+				// Reached filesystem root
+				break
+			}
+			currentPath = parent
+		}
+	}
+
+	return configFiles
 }
 
 // loadFromEnv loads configuration values from environment variables

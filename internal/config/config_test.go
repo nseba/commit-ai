@@ -208,3 +208,279 @@ CAI_PROMPT_TEMPLATE = "custom.txt"`
 	assert.Equal(t, "french", cfg.Language)
 	assert.Equal(t, "custom.txt", cfg.PromptTemplate)
 }
+
+func TestLoadWithProjectPath_NoGitRepo(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.toml")
+
+	// Create global config
+	globalCfg := DefaultConfig()
+	globalCfg.Model = "global-model"
+	err := globalCfg.Save(configFile)
+	require.NoError(t, err)
+
+	// Create project config in temp dir (not a git repo)
+	projectConfigFile := filepath.Join(tempDir, ".commitai")
+	projectContent := `CAI_MODEL = "project-model"
+CAI_LANGUAGE = "spanish"`
+	err = os.WriteFile(projectConfigFile, []byte(projectContent), 0o644)
+	require.NoError(t, err)
+
+	cfg, err := LoadWithProjectPath(configFile, tempDir)
+	require.NoError(t, err)
+
+	// Should use project overrides
+	assert.Equal(t, "project-model", cfg.Model)
+	assert.Equal(t, "spanish", cfg.Language)
+	// Other values should remain from global config
+	assert.Equal(t, DefaultConfig().APIURL, cfg.APIURL)
+}
+
+func TestLoadWithProjectPath_WithGitRepo(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.toml")
+
+	// Create global config
+	globalCfg := DefaultConfig()
+	globalCfg.Model = "global-model"
+	err := globalCfg.Save(configFile)
+	require.NoError(t, err)
+
+	// Create git repo structure
+	gitDir := filepath.Join(tempDir, "repo")
+	err = os.MkdirAll(filepath.Join(gitDir, ".git"), 0o755)
+	require.NoError(t, err)
+
+	subDir := filepath.Join(gitDir, "subdir")
+	err = os.MkdirAll(subDir, 0o755)
+	require.NoError(t, err)
+
+	// Create project configs at different levels
+	gitRootConfig := filepath.Join(gitDir, ".commitai")
+	gitRootContent := `CAI_MODEL = "git-root-model"
+CAI_PROVIDER = "openai"`
+	err = os.WriteFile(gitRootConfig, []byte(gitRootContent), 0o644)
+	require.NoError(t, err)
+
+	subDirConfig := filepath.Join(subDir, ".commitai")
+	subDirContent := `CAI_MODEL = "subdir-model"
+CAI_LANGUAGE = "french"`
+	err = os.WriteFile(subDirConfig, []byte(subDirContent), 0o644)
+	require.NoError(t, err)
+
+	cfg, err := LoadWithProjectPath(configFile, subDir)
+	require.NoError(t, err)
+
+	// Should prioritize more specific config (subdir overrides git root)
+	assert.Equal(t, "subdir-model", cfg.Model)          // from subdir
+	assert.Equal(t, "french", cfg.Language)             // from subdir
+	assert.Equal(t, "openai", cfg.Provider)             // from git root
+	assert.Equal(t, DefaultConfig().APIURL, cfg.APIURL) // from global default
+}
+
+func TestLoadWithProjectPath_EnvironmentOverrides(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.toml")
+
+	// Set environment variable
+	os.Setenv("CAI_MODEL", "env-model")
+	defer os.Unsetenv("CAI_MODEL")
+
+	// Create global config
+	globalCfg := DefaultConfig()
+	globalCfg.Model = "global-model"
+	err := globalCfg.Save(configFile)
+	require.NoError(t, err)
+
+	// Create project config
+	projectConfigFile := filepath.Join(tempDir, ".commitai")
+	projectContent := `CAI_MODEL = "project-model"`
+	err = os.WriteFile(projectConfigFile, []byte(projectContent), 0o644)
+	require.NoError(t, err)
+
+	cfg, err := LoadWithProjectPath(configFile, tempDir)
+	require.NoError(t, err)
+
+	// Environment should override everything
+	assert.Equal(t, "env-model", cfg.Model)
+}
+
+func TestLoadWithProjectPath_PartialOverrides(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.toml")
+
+	// Create global config with all values
+	globalContent := `CAI_API_URL = "http://global.com"
+CAI_MODEL = "global-model"
+CAI_PROVIDER = "ollama"
+CAI_API_TOKEN = "global-token"
+CAI_LANGUAGE = "english"
+CAI_PROMPT_TEMPLATE = "global.txt"
+CAI_TIMEOUT_SECONDS = 300`
+	err := os.WriteFile(configFile, []byte(globalContent), 0o644)
+	require.NoError(t, err)
+
+	// Create project config with only some overrides
+	projectConfigFile := filepath.Join(tempDir, ".commitai")
+	projectContent := `CAI_MODEL = "project-model"
+CAI_LANGUAGE = "spanish"
+CAI_TIMEOUT_SECONDS = 600`
+	err = os.WriteFile(projectConfigFile, []byte(projectContent), 0o644)
+	require.NoError(t, err)
+
+	cfg, err := LoadWithProjectPath(configFile, tempDir)
+	require.NoError(t, err)
+
+	// Should have project overrides where specified
+	assert.Equal(t, "project-model", cfg.Model)
+	assert.Equal(t, "spanish", cfg.Language)
+	assert.Equal(t, 600, cfg.TimeoutSeconds)
+
+	// Should keep global values for non-overridden fields
+	assert.Equal(t, "http://global.com", cfg.APIURL)
+	assert.Equal(t, "ollama", cfg.Provider)
+	assert.Equal(t, "global-token", cfg.APIToken)
+	assert.Equal(t, "global.txt", cfg.PromptTemplate)
+}
+
+func TestFindGitRoot(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create git repo structure
+	gitDir := filepath.Join(tempDir, "repo")
+	err := os.MkdirAll(filepath.Join(gitDir, ".git"), 0o755)
+	require.NoError(t, err)
+
+	subDir := filepath.Join(gitDir, "subdir", "nested")
+	err = os.MkdirAll(subDir, 0o755)
+	require.NoError(t, err)
+
+	// Should find git root from nested directory
+	root, err := findGitRoot(subDir)
+	require.NoError(t, err)
+	assert.Equal(t, gitDir, root)
+
+	// Should find git root from git root itself
+	root, err = findGitRoot(gitDir)
+	require.NoError(t, err)
+	assert.Equal(t, gitDir, root)
+
+	// Should fail when not in git repo
+	nonGitDir := filepath.Join(tempDir, "nongit")
+	err = os.MkdirAll(nonGitDir, 0o755)
+	require.NoError(t, err)
+
+	_, err = findGitRoot(nonGitDir)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not in a git repository")
+}
+
+func TestFindGitRoot_WithGitFile(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create worktree structure with .git file
+	worktreeDir := filepath.Join(tempDir, "worktree")
+	err := os.MkdirAll(worktreeDir, 0o755)
+	require.NoError(t, err)
+
+	// Create .git file pointing to real git dir
+	gitFile := filepath.Join(worktreeDir, ".git")
+	gitFileContent := "gitdir: /some/other/path/.git"
+	err = os.WriteFile(gitFile, []byte(gitFileContent), 0o644)
+	require.NoError(t, err)
+
+	root, err := findGitRoot(worktreeDir)
+	require.NoError(t, err)
+	assert.Equal(t, worktreeDir, root)
+}
+
+func TestFindProjectConfigs(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create directory structure
+	gitRoot := filepath.Join(tempDir, "repo")
+	subDir := filepath.Join(gitRoot, "subdir")
+	nestedDir := filepath.Join(subDir, "nested")
+
+	err := os.MkdirAll(nestedDir, 0o755)
+	require.NoError(t, err)
+
+	configs := findProjectConfigs(gitRoot, nestedDir)
+
+	// Should return configs in order: git root first, then path-specific
+	expected := []string{
+		filepath.Join(gitRoot, ".commitai"),
+		filepath.Join(nestedDir, ".commitai"),
+		filepath.Join(subDir, ".commitai"),
+	}
+
+	assert.Equal(t, expected, configs)
+}
+
+func TestFindProjectConfigs_SameAsGitRoot(t *testing.T) {
+	tempDir := t.TempDir()
+
+	configs := findProjectConfigs(tempDir, tempDir)
+
+	// Should return only one config when project path is same as git root
+	expected := []string{
+		filepath.Join(tempDir, ".commitai"),
+	}
+
+	assert.Equal(t, expected, configs)
+}
+
+func TestLoadProjectConfig_EmptyValues(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := DefaultConfig()
+	originalModel := cfg.Model
+
+	// Create project config with empty values (should not override)
+	projectConfigFile := filepath.Join(tempDir, ".commitai")
+	projectContent := `CAI_API_URL = ""
+CAI_MODEL = ""
+CAI_LANGUAGE = "spanish"`
+	err := os.WriteFile(projectConfigFile, []byte(projectContent), 0o644)
+	require.NoError(t, err)
+
+	err = cfg.loadProjectConfig(projectConfigFile)
+	require.NoError(t, err)
+
+	// Empty values should not override existing values
+	assert.Equal(t, DefaultConfig().APIURL, cfg.APIURL)
+	assert.Equal(t, originalModel, cfg.Model)
+
+	// Non-empty values should override
+	assert.Equal(t, "spanish", cfg.Language)
+}
+
+func TestLoadProjectConfig_NonExistentFile(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := DefaultConfig()
+	originalModel := cfg.Model
+
+	nonExistentFile := filepath.Join(tempDir, "nonexistent.commitai")
+	err := cfg.loadProjectConfig(nonExistentFile)
+	require.NoError(t, err)
+
+	// Should not change anything
+	assert.Equal(t, originalModel, cfg.Model)
+}
+
+func TestLoadProjectConfig_InvalidTOML(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := DefaultConfig()
+
+	// Create invalid TOML file
+	projectConfigFile := filepath.Join(tempDir, ".commitai")
+	invalidContent := `CAI_MODEL = "unclosed string`
+	err := os.WriteFile(projectConfigFile, []byte(invalidContent), 0o644)
+	require.NoError(t, err)
+
+	err = cfg.loadProjectConfig(projectConfigFile)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to decode project config file")
+}

@@ -120,7 +120,40 @@ commit-ai -a -e -c
 
 ## Configuration
 
-Commit-AI looks for configuration in `~/.config/commit-ai/config.toml`. If it doesn't exist, it will be created with default values.
+Commit-AI supports hierarchical configuration with the following priority (highest to lowest):
+
+1. **Environment variables** (`CAI_*`)
+2. **Project-local configuration** (`.commitai` files)
+3. **Global configuration** (`~/.config/commit-ai/config.toml`)
+4. **Default values**
+
+### Global Configuration
+
+The global configuration is stored in `~/.config/commit-ai/config.toml`. If it doesn't exist, it will be created with default values.
+
+### Project-Local Configuration
+
+You can override global settings on a per-project basis using `.commitai` files. These files use the same TOML format as the global configuration but only need to specify the values you want to override.
+
+**Key features:**
+- **Partial overrides**: Only specify the settings you want to change
+- **Cascading configuration**: More specific directories override less specific ones
+- **Git-aware**: Automatically finds the git repository root and applies configurations hierarchically
+
+**Configuration discovery:**
+1. If you're in a git repository, commit-ai will look for `.commitai` files from the git root up to your current directory
+2. If not in a git repository, it looks for `.commitai` in your current directory
+3. More specific directory configurations override less specific ones
+
+**Example structure:**
+```
+my-project/              # Git repository root
+├── .commitai           # Project-wide settings
+├── frontend/
+│   └── .commitai       # Frontend-specific overrides
+└── backend/
+    └── .commitai       # Backend-specific overrides
+```
 
 ### Configuration Options
 
@@ -147,6 +180,51 @@ CAI_LANGUAGE = "english"
 CAI_PROMPT_TEMPLATE = "default.txt"
 CAI_TIMEOUT_SECONDS = 300
 ```
+
+### Project-Local Configuration Examples
+
+**Basic project override:**
+```toml
+# .commitai (in project root)
+
+# Use OpenAI for this project
+CAI_PROVIDER = "openai"
+CAI_MODEL = "gpt-4"
+CAI_API_TOKEN = "your-project-specific-token"
+```
+
+**Multi-language project:**
+```toml
+# .commitai (in project root)
+
+# Generate commit messages in Spanish for this project
+CAI_LANGUAGE = "spanish"
+```
+
+**Development environment override:**
+```toml
+# .commitai (in development directory)
+
+# Use local model with longer timeout for development
+CAI_API_URL = "http://localhost:11435"
+CAI_MODEL = "codellama"
+CAI_TIMEOUT_SECONDS = 600
+```
+
+**Partial configuration example:**
+```toml
+# Global config has all settings
+# Project .commitai only overrides specific values
+CAI_MODEL = "gpt-3.5-turbo"  # Only override the model
+CAI_LANGUAGE = "french"      # Only override the language
+# All other settings inherited from global config
+```
+
+### Example Files
+
+See the included example files for reference:
+- `.commitai.example` - Template with all configuration options and documentation
+- `.commitai.project-example` - Real-world example for Go projects
 
 ### OpenAI Configuration
 

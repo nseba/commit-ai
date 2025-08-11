@@ -1,0 +1,18 @@
+# Project-local configuration for commit-ai development
+# This file demonstrates project-local configuration overrides
+
+# Use a more specific model for this Go project
+CAI_MODEL = "codellama:7b"
+
+# Generate commit messages in English with technical detail
+CAI_LANGUAGE = "english"
+
+# Use a longer timeout for this project since it may have large diffs
+CAI_TIMEOUT_SECONDS = 450
+
+# Example of provider override (commented out - using global config)
+# CAI_PROVIDER = "ollama"
+# CAI_API_URL = "http://localhost:11434"
+
+# This configuration will be used when running commit-ai from within
+# this repository, demonstrating how project-local configs work

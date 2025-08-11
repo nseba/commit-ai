@@ -1,0 +1,47 @@
+# Project-Local Configuration for commit-ai
+# Copy this file to .commitai in your project root and customize as needed
+#
+# Project-local configurations override global settings partially or completely.
+# Only specify the values you want to override - empty or missing values
+# will use the global configuration or defaults.
+#
+# Configuration priority (highest to lowest):
+# 1. Environment variables (CAI_*)
+# 2. Project-local .commitai files (more specific directory overrides less specific)
+# 3. Global config file (~/.config/commit-ai/config.toml)
+# 4. Default values
+
+# Override the AI provider for this project
+# CAI_PROVIDER = "openai"
+
+# Use a different model for this project
+# CAI_MODEL = "gpt-4"
+
+# Project-specific API URL (useful for local models or different endpoints)
+# CAI_API_URL = "http://localhost:11435"
+
+# Project-specific API token (if using a different provider than global)
+# CAI_API_TOKEN = "your-project-specific-token"
+
+# Generate commit messages in a different language for this project
+# CAI_LANGUAGE = "spanish"
+
+# Use a project-specific prompt template
+# CAI_PROMPT_TEMPLATE = "project-specific.txt"
+
+# Adjust timeout for this project (useful for large repositories)
+# CAI_TIMEOUT_SECONDS = 600
+
+# Example: Configuration for an open-source project using OpenAI
+# CAI_PROVIDER = "openai"
+# CAI_MODEL = "gpt-3.5-turbo"
+# CAI_LANGUAGE = "english"
+
+# Example: Configuration for a multilingual project
+# CAI_LANGUAGE = "french"
+# CAI_PROMPT_TEMPLATE = "multilingual.txt"
+
+# Example: Configuration for a project with custom local AI model
+# CAI_API_URL = "http://localhost:8080"
+# CAI_MODEL = "custom-code-model"
+# CAI_PROVIDER = "ollama"
