@@ -1,23 +1,32 @@
-# Example .caiignore file
-# This file uses the same syntax as .gitignore to exclude files from commit message generation
+# Commit-AI Project .caiignore
+# This file excludes certain files from being analyzed for commit message generation
 
-# Log files
-*.log
-logs/
-debug.log
-error.log
-
-# Build artifacts
+# Build artifacts and binaries
 dist/
 build/
 target/
 out/
 bin/
+commit-ai
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go build artifacts
+*.test
+*.prof
+cpu.prof
+mem.prof
+
+# Test coverage reports
+coverage.out
+coverage.html
+*.coverage
 
 # Dependency directories
-node_modules/
 vendor/
-.vendor/
+node_modules/
 
 # IDE and editor files
 .vscode/
@@ -26,6 +35,14 @@ vendor/
 *.swo
 *~
 .DS_Store
+*.kate-swp
+.*.sw?
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+.Trashes
+.Spotlight-V100
 
 # Temporary files
 tmp/
@@ -33,53 +50,59 @@ temp/
 .tmp/
 *.tmp
 *.temp
+*.log
+logs/
 
-# Generated files
-*.generated.go
-*.pb.go
-*_pb2.py
-*.generated.ts
-
-# Documentation (if you don't want docs changes in commit messages)
-# *.md
-# docs/
-# documentation/
-
-# Test files (if you want to focus on implementation changes)
-# *_test.go
-# test/
-# tests/
-# __tests__/
-# spec/
+# Git files
+.git/
+.gitignore
 
 # Configuration files that might contain sensitive data
-# config.toml
-# .env
-# .env.local
-# secrets.yml
+config.toml
+.env
+.env.*
+*.key
+*.pem
+secrets/
 
-# Package manager files
+# Documentation that doesn't affect functionality
+#*.md
+#docs/
+#documentation/
+#CHANGELOG.md
+#CONTRIBUTING.md
+#LICENSE
+#SECURITY.md
+
+# CI/CD files (usually don't need commit messages for small changes)
+#.github/
+#.gitlab-ci.yml
+#.travis.yml
+#.circleci/
+#Jenkinsfile
+
+# Package manager lock files (auto-generated)
+go.sum
 package-lock.json
 yarn.lock
-go.sum
 Pipfile.lock
+poetry.lock
 
-# Coverage reports
-coverage.out
-coverage.html
-*.coverage
-.nyc_output/
+# Docker files for development
+#docker-compose.yml
+Dockerfile.dev
+.dockerignore
 
-# Compiled binaries
-*.exe
-*.dll
-*.so
-*.dylib
+# Scripts that are utilities
+#scripts/
+#install.sh
+#setup.sh
 
-# Archives
-*.zip
-*.tar.gz
-*.rar
+# Example and template files
+#*.example
+#*.template
+#templates/
+#examples/
 
 # Large data files
 *.csv
@@ -87,6 +110,9 @@ coverage.html
 *.xml
 data/
 datasets/
+*.db
+*.sqlite
+*.sqlite3
 
 # Media files
 *.jpg
@@ -99,18 +125,21 @@ datasets/
 *.mov
 *.avi
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
 # Cache directories
 .cache/
 __pycache__/
 .pytest_cache/
 .mypy_cache/
+.tox/
 
-# OS generated files
-Thumbs.db
-ehthumbs.db
-.Trashes
+# Backup files
+*.bak
+*.backup
+*~
+
+# Archive files
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z

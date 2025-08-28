@@ -118,10 +118,14 @@ setup_config() {
     # Create config directory
     mkdir -p "$CONFIG_DIR"
 
-    # Create default config file if it doesn't exist
+    # Create default config file, backup existing if present
     local config_file="$CONFIG_DIR/config.toml"
-    if [ ! -f "$config_file" ]; then
-        cat > "$config_file" << 'EOF'
+    if [ -f "$config_file" ]; then
+        local backup_file="$config_file.backup.$(date +%Y%m%d_%H%M%S)"
+        print_status "📁 Backing up existing config.toml to $(basename "$backup_file")"
+        cp "$config_file" "$backup_file"
+    fi
+    cat > "$config_file" << 'EOF'
 # Commit-AI Configuration File
 # For more information, visit: https://github.com/nseba/commit-ai
 
@@ -151,15 +155,16 @@ CAI_LANGUAGE = "english"
 # The template file should be placed in ~/.config/commit-ai/
 CAI_PROMPT_TEMPLATE = "default.txt"
 EOF
-        print_status "Created default configuration file: $config_file"
-    else
-        print_warning "Configuration file already exists: $config_file"
-    fi
+    print_status "Created configuration file: $config_file"
 
-    # Create default template file if it doesn't exist
+    # Create default template file, backup existing if present
     local template_file="$CONFIG_DIR/default.txt"
-    if [ ! -f "$template_file" ]; then
-        cat > "$template_file" << 'EOF'
+    if [ -f "$template_file" ]; then
+        local backup_file="$template_file.backup.$(date +%Y%m%d_%H%M%S)"
+        print_status "📁 Backing up existing default.txt to $(basename "$backup_file")"
+        cp "$template_file" "$backup_file"
+    fi
+    cat > "$template_file" << 'EOF'
 You are an expert developer reviewing a git diff to generate a concise, meaningful commit message.
 
 Language: Generate the commit message in {{.Language}}.
@@ -175,10 +180,7 @@ Based on the above git diff, generate a single line commit message that:
 
 Commit Message:
 EOF
-        print_status "Created default template file: $template_file"
-    else
-        print_warning "Template file already exists: $template_file"
-    fi
+    print_status "Created default template file: $template_file"
 }
 
 # Function to check PATH

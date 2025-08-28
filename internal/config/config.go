@@ -348,8 +348,24 @@ func (c *Config) loadFromEnv() {
 	}
 }
 
-// GetPromptTemplatePath returns the full path to the prompt template file
+// GetPromptTemplatePath returns the full path to the prompt template file.
+// It first checks for the template in the current working directory (project-local),
+// then falls back to the global config directory.
 func (c *Config) GetPromptTemplatePath(configFile string) string {
+	// Check if template path is absolute
+	if filepath.IsAbs(c.PromptTemplate) {
+		return c.PromptTemplate
+	}
+
+	// First, check if template exists in current working directory (project-local)
+	if currentDir, err := os.Getwd(); err == nil {
+		projectTemplatePath := filepath.Join(currentDir, c.PromptTemplate)
+		if _, err := os.Stat(projectTemplatePath); err == nil {
+			return projectTemplatePath
+		}
+	}
+
+	// Fall back to global config directory
 	configDir := filepath.Dir(configFile)
 	return filepath.Join(configDir, c.PromptTemplate)
 }

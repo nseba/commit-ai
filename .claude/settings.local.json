@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go test:*)",
+      "Bash(make:*)",
+      "Bash(./dist/commit-ai init:*)",
+      "Read(/private/tmp/test-commit-ai/**)",
+      "Read(/tmp/test-commit-ai/**)",
+      "Read(/tmp/test-commit-ai/**)",
+      "Read(/private/tmp/test-commit-ai/**)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

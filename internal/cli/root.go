@@ -130,6 +130,21 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+// initCmd represents the init command
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initialize project configuration",
+	Long: `Initialize commit-ai configuration for the current project.
+
+This will create:
+- .commitai: Project-specific configuration file
+- .caiignore: File patterns to ignore when generating commit messages
+- custom-prompt.txt: Custom prompt template for this project`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return initProject()
+	},
+}
+
 // handleShowCommit shows the last commit message
 func handleShowCommit(gitRepo *git.Repository) error {
 	lastCommit, err := gitRepo.GetLastCommitMessage()
@@ -209,11 +224,166 @@ func handleInteractiveMode(generatedMessage string, gitRepo *git.Repository) err
 	return nil
 }
 
+// initProject initializes project configuration files in the current directory
+func initProject() error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	fmt.Printf("Initializing commit-ai configuration in: %s\n", currentDir)
+
+	// Create .commitai configuration file
+	if err := createProjectConfig(currentDir); err != nil {
+		return fmt.Errorf("failed to create .commitai file: %w", err)
+	}
+
+	// Create .caiignore file
+	if err := createIgnoreFile(currentDir); err != nil {
+		return fmt.Errorf("failed to create .caiignore file: %w", err)
+	}
+
+	// Create custom prompt template
+	if err := createCustomPromptTemplate(currentDir); err != nil {
+		return fmt.Errorf("failed to create custom prompt template: %w", err)
+	}
+
+	fmt.Println("✓ Project initialized successfully!")
+	fmt.Println("\nFiles created:")
+	fmt.Println("  .commitai - Project configuration")
+	fmt.Println("  .caiignore - Ignore patterns")
+	fmt.Println("  custom-prompt.txt - Custom prompt template")
+	fmt.Println("\nYou can now customize these files for your project.")
+
+	return nil
+}
+
+// createProjectConfig creates a .commitai configuration file
+func createProjectConfig(dir string) error {
+	configPath := filepath.Join(dir, ".commitai")
+
+	// Check if file already exists
+	if _, err := os.Stat(configPath); err == nil {
+		fmt.Printf("⚠️  .commitai already exists, skipping\n")
+		return nil
+	}
+
+	content := `# Project-specific commit-ai configuration
+# This file allows you to override global settings for this project
+# Only specify the values you want to change
+
+# AI Provider settings
+# CAI_PROVIDER = "ollama"  # or "openai"
+# CAI_MODEL = "llama2"     # or "gpt-3.5-turbo", "gpt-4", etc.
+# CAI_API_URL = "http://localhost:11434"  # or "https://api.openai.com"
+# CAI_API_TOKEN = ""       # Required for OpenAI
+
+# Language and template settings
+# CAI_LANGUAGE = "english"
+# CAI_PROMPT_TEMPLATE = "custom-prompt.txt"  # Use the custom template created in this directory
+
+# Timeout settings
+# CAI_TIMEOUT_SECONDS = 300
+`
+
+	if err := os.WriteFile(configPath, []byte(content), 0o644); err != nil {
+		return err
+	}
+
+	fmt.Println("✓ Created .commitai")
+	return nil
+}
+
+// createIgnoreFile creates a .caiignore file
+func createIgnoreFile(dir string) error {
+	ignorePath := filepath.Join(dir, ".caiignore")
+
+	// Check if file already exists
+	if _, err := os.Stat(ignorePath); err == nil {
+		fmt.Printf("⚠️  .caiignore already exists, skipping\n")
+		return nil
+	}
+
+	content := `# Ignore patterns for commit-ai (syntax like .gitignore)
+# These files will be excluded from diff analysis when generating commit messages
+
+# Ignore log files
+*.log
+logs/
+
+# Ignore generated files
+dist/
+build/
+*.generated.*
+
+# Ignore documentation changes (uncomment if you want to focus on code changes)
+# *.md
+# docs/
+
+# Ignore test files (uncomment if you want to focus on implementation changes)
+# *_test.*
+# test/
+# tests/
+
+# Ignore vendor/node_modules directories
+vendor/
+node_modules/
+
+# Ignore temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+`
+
+	if err := os.WriteFile(ignorePath, []byte(content), 0o644); err != nil {
+		return err
+	}
+
+	fmt.Println("✓ Created .caiignore")
+	return nil
+}
+
+// createCustomPromptTemplate creates a custom prompt template file
+func createCustomPromptTemplate(dir string) error {
+	templatePath := filepath.Join(dir, "custom-prompt.txt")
+
+	// Check if file already exists
+	if _, err := os.Stat(templatePath); err == nil {
+		fmt.Printf("⚠️  custom-prompt.txt already exists, skipping\n")
+		return nil
+	}
+
+	// Use the same default template as in generator package
+	content := `You are an expert developer reviewing a git diff to generate a concise, meaningful commit message.
+
+Language: Generate the commit message in {{.Language}}.
+
+Git Diff:
+{{.Diff}}
+
+Based on the above git diff, generate a single line commit message that:
+1. Is concise and descriptive (50 characters or less preferred)
+2. Uses conventional commit format if applicable (feat:, fix:, docs:, etc.)
+3. Describes WHAT changed, not HOW it was implemented
+4. Uses imperative mood (e.g., "Add feature" not "Added feature")
+
+Commit Message:`
+
+	if err := os.WriteFile(templatePath, []byte(content), 0o644); err != nil {
+		return err
+	}
+
+	fmt.Println("✓ Created custom-prompt.txt")
+	return nil
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Add version command
+	// Add subcommands
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(initCmd)
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/commit-ai/config.toml)")

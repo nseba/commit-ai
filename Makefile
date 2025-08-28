@@ -110,9 +110,25 @@ docker-update-description: ## Update Docker Hub repository description from READ
 # Example and demo targets
 setup-example: ## Set up example configuration
 	mkdir -p ~/.config/commit-ai
-	cp configs/config.toml.example ~/.config/commit-ai/config.toml
-	cp templates/default.txt ~/.config/commit-ai/default.txt
-	@echo "Example configuration created in ~/.config/commit-ai/"
+	@if [ -f ~/.config/commit-ai/config.toml ]; then \
+		echo "📁 Backing up existing config.toml to config.toml.backup.$(shell date +%Y%m%d_%H%M%S)"; \
+		cp ~/.config/commit-ai/config.toml ~/.config/commit-ai/config.toml.backup.$(shell date +%Y%m%d_%H%M%S); \
+	fi
+	@cp configs/config.toml.example ~/.config/commit-ai/config.toml && \
+		echo "✓ Created config.toml"
+	@if [ -f ~/.config/commit-ai/default.txt ]; then \
+		echo "📁 Backing up existing default.txt to default.txt.backup.$(shell date +%Y%m%d_%H%M%S)"; \
+		cp ~/.config/commit-ai/default.txt ~/.config/commit-ai/default.txt.backup.$(shell date +%Y%m%d_%H%M%S); \
+	fi
+	@cp templates/default.txt ~/.config/commit-ai/default.txt && \
+		echo "✓ Created default.txt"
+	@if [ -f ~/.config/commit-ai/spanish.txt ]; then \
+		echo "📁 Backing up existing spanish.txt to spanish.txt.backup.$(shell date +%Y%m%d_%H%M%S)"; \
+		cp ~/.config/commit-ai/spanish.txt ~/.config/commit-ai/spanish.txt.backup.$(shell date +%Y%m%d_%H%M%S); \
+	fi
+	@cp templates/spanish.txt ~/.config/commit-ai/spanish.txt && \
+		echo "✓ Created spanish.txt"
+	@echo "Configuration setup complete in ~/.config/commit-ai/"
 
 run-example: build setup-example ## Build and run with example configuration
 	./$(BUILD_DIR)/$(BINARY_NAME) --help
