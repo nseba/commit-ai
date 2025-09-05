@@ -145,6 +145,20 @@ This will create:
 	},
 }
 
+// initIgnoreCmd represents the init-ignore command
+var initIgnoreCmd = &cobra.Command{
+	Use:   "init-ignore",
+	Short: "Initialize .caiignore file",
+	Long: `Initialize a .caiignore file in the current directory.
+
+If a .gitignore file exists, it will be used as a basis for the ignore patterns.
+Otherwise, a comprehensive default ignore file will be created with common
+patterns for various development environments.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return initIgnoreFile()
+	},
+}
+
 // handleShowCommit shows the last commit message
 func handleShowCommit(gitRepo *git.Repository) error {
 	lastCommit, err := gitRepo.GetLastCommitMessage()
@@ -370,12 +384,213 @@ Based on the above git diff, generate a single line commit message that:
 
 Commit Message:`
 
-	if err := os.WriteFile(templatePath, []byte(content), 0o600); err != nil;
+	if err := os.WriteFile(templatePath, []byte(content), 0o600); err != nil {
 		return err
 	}
 
 	fmt.Println("✓ Created custom-prompt.txt")
 	return nil
+}
+
+// initIgnoreFile initializes a .caiignore file based on .gitignore or defaults
+func initIgnoreFile() error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	ignorePath := filepath.Join(currentDir, ".caiignore")
+
+	// Check if .caiignore already exists
+	if _, err := os.Stat(ignorePath); err == nil {
+		fmt.Printf("⚠️  .caiignore already exists in %s\n", currentDir)
+		return nil
+	}
+
+	// Check if .gitignore exists
+	gitignorePath := filepath.Join(currentDir, ".gitignore")
+	var content string
+
+	if _, err := os.Stat(gitignorePath); err == nil {
+		// Use .gitignore as basis
+		fmt.Printf("Found .gitignore, using it as basis for .caiignore\n")
+
+		gitignoreContent, err := os.ReadFile(gitignorePath)
+		if err != nil {
+			return fmt.Errorf("failed to read .gitignore: %w", err)
+		}
+
+		content = fmt.Sprintf(`# Commit-AI ignore patterns (based on .gitignore)
+# These files will be excluded from diff analysis when generating commit messages
+
+%s
+
+# Additional commit-ai specific ignores
+# Uncomment patterns below as needed for your project
+
+# Documentation (uncomment to focus on code changes)
+# *.md
+# docs/
+# README*
+
+# Test files (uncomment to focus on implementation)
+# *_test.*
+# test/
+# tests/
+# spec/
+# __tests__/
+
+# Configuration files (uncomment to ignore config changes)
+# *.config.*
+# .env*
+# *.ini
+# *.conf
+
+# Generated files and build artifacts (usually already in .gitignore)
+# dist/
+# build/
+# out/
+# target/
+# .next/
+# coverage/
+`, string(gitignoreContent))
+	} else {
+		// Use comprehensive default template
+		fmt.Printf("No .gitignore found, creating comprehensive default .caiignore\n")
+		content = getDefaultIgnoreContent()
+	}
+
+	if err := os.WriteFile(ignorePath, []byte(content), 0o600); err != nil {
+		return fmt.Errorf("failed to create .caiignore: %w", err)
+	}
+
+	fmt.Printf("✓ Created .caiignore in %s\n", currentDir)
+	return nil
+}
+
+// getDefaultIgnoreContent returns comprehensive default ignore patterns
+func getDefaultIgnoreContent() string {
+	return `# Commit-AI ignore patterns
+# These files will be excluded from diff analysis when generating commit messages
+
+# Dependencies
+node_modules/
+vendor/
+.pnp
+.pnp.js
+
+# Production builds
+dist/
+build/
+out/
+target/
+.next/
+.nuxt/
+coverage/
+
+# Environment and configuration files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.config.js
+*.config.ts
+.vscode/
+.idea/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+Pipfile.lock
+poetry.lock
+Gemfile.lock
+composer.lock
+go.sum
+
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output/
+
+# Temporary folders
+tmp/
+temp/
+.tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Documentation (uncomment to focus on code changes)
+# *.md
+# docs/
+# README*
+# CHANGELOG*
+# LICENSE*
+
+# Test files (uncomment to focus on implementation)
+# *_test.*
+# *_spec.*
+# test/
+# tests/
+# spec/
+# __tests__/
+# cypress/
+# e2e/
+
+# Generated or compiled files
+*.generated.*
+*.min.js
+*.min.css
+*.bundle.js
+*.chunk.js
+*.wasm
+*.pyc
+*.pyo
+*.class
+*.o
+*.so
+*.dll
+*.exe
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+`
 }
 
 func init() {
@@ -384,6 +599,7 @@ func init() {
 	// Add subcommands
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(initIgnoreCmd)
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/commit-ai/config.toml)")

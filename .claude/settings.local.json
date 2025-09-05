@@ -8,7 +8,8 @@
       "Read(/tmp/test-commit-ai/**)",
       "Read(/tmp/test-commit-ai/**)",
       "Read(/private/tmp/test-commit-ai/**)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(/Users/seba/dev/nseba/commit-ai/dist/commit-ai init-ignore)"
     ],
     "deny": [],
     "ask": []
