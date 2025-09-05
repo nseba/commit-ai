@@ -286,7 +286,7 @@ func createProjectConfig(dir string) error {
 # CAI_TIMEOUT_SECONDS = 300
 `
 
-	if err := os.WriteFile(configPath, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(configPath, []byte(content), 0o600); err != nil {
 		return err
 	}
 
@@ -336,7 +336,7 @@ node_modules/
 Thumbs.db
 `
 
-	if err := os.WriteFile(ignorePath, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(ignorePath, []byte(content), 0o600); err != nil {
 		return err
 	}
 
@@ -370,7 +370,7 @@ Based on the above git diff, generate a single line commit message that:
 
 Commit Message:`
 
-	if err := os.WriteFile(templatePath, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(templatePath, []byte(content), 0o600); err != nil;
 		return err
 	}
 
