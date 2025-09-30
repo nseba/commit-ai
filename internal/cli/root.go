@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -415,7 +416,12 @@ func initIgnoreFile() error {
 		// Use .gitignore as basis
 		fmt.Printf("Found .gitignore, using it as basis for .caiignore\n")
 
-		gitignoreContent, err := os.ReadFile(gitignorePath)
+		// Validate the gitignore path for security
+		if err := validateGitignorePath(gitignorePath, currentDir); err != nil {
+			return fmt.Errorf("invalid gitignore path: %w", err)
+		}
+
+		gitignoreContent, err := os.ReadFile(gitignorePath) // #nosec G304 -- path validated by validateGitignorePath()
 		if err != nil {
 			return fmt.Errorf("failed to read .gitignore: %w", err)
 		}
@@ -591,6 +597,30 @@ Thumbs.db
 *.swo
 *~
 `
+}
+
+// validateGitignorePath validates that a gitignore path is safe for reading
+func validateGitignorePath(gitignorePath, baseDir string) error {
+	// Check for path traversal attempts first (before cleaning)
+	if strings.Contains(gitignorePath, "..") {
+		return fmt.Errorf("path traversal detected in gitignore path")
+	}
+
+	// Clean the path to resolve any . components
+	cleanPath := filepath.Clean(gitignorePath)
+
+	// Ensure the file is exactly .gitignore
+	if filepath.Base(cleanPath) != ".gitignore" {
+		return fmt.Errorf("invalid filename: must be .gitignore")
+	}
+
+	// Ensure the path is within the base directory
+	expectedPath := filepath.Join(baseDir, ".gitignore")
+	if cleanPath != expectedPath {
+		return fmt.Errorf("gitignore path must be within base directory")
+	}
+
+	return nil
 }
 
 func init() {
